@@ -8,7 +8,7 @@ load_dotenv()
 
 def scrape_website(url):
 
-    #Scrape HTML Conten from a page
+    # Retrieve the HTML Content of a Page
     page = requests.get(url)
     
     # Parse the HTML code with Beautiful Soup
@@ -18,7 +18,7 @@ def scrape_website(url):
     important_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'title', 'p', 'meta'])
     
     # Filter and join the text content of important elements
-    # Removes leading and trailing whitespace + Ignores HTML tags
+    # Removes leading and trailing whitespace and Ignores HTML tags
     filtered_content = ' '.join([elem.get_text(strip=True) for elem in important_elements]) 
 
     return filtered_content
