@@ -20,7 +20,11 @@ def scrape_website(url):
     # Extract text, media, link, and code elements
     text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
 
-    media_elements = soup.find_all(['img', 'audio', 'video'])
+    video_elements = soup.find_all('video')
+
+    audio_elements = soup.find_all('audio')
+
+    image_elements = soup.find_all('img')
 
     link_elements = soup.find_all('a')
     
@@ -30,12 +34,26 @@ def scrape_website(url):
     # Removes leading and trailing whitespace and Ignores HTML tags
     text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements]) 
 
-    # Extract the src attributes of media elements
-    media_content = []
-    for media in media_elements:
-        media_src = media.get('src')
-        if media_src:
-            media_content.append(media_src)
+    # Extract the src attributes of video elements
+    video_content = []
+    for video in video_elements:
+        video_src = video.get('src')
+        if video_src:
+            video_content.append(video_src)
+    
+    # Extract the src attributes of video elements
+    image_content = []
+    for image in image_elements:
+        image_src = image.get('src')
+        if image_src:
+            image_content.append(image_src)
+    
+    # Extract the src attributes of audio elements
+    audio_content = []
+    for audio in audio_elements:
+        audio_src = audio.get('src')
+        if video_src:
+            audio_content.append(audio_src)
 
     # Extract the href attribute of the link elements
     link_content = []
@@ -50,7 +68,7 @@ def scrape_website(url):
 
     code_content = json.dumps([elem.get_text(strip=True) for elem in code_elements])
 
-    return text_content, media_content, link_content, code_content
+    return text_content, video_content, image_content, audio_content, link_content, code_content
 
 def analyze_with_llm(combined_content):
 
@@ -136,7 +154,31 @@ def new_analyze_with_llm(text, media, links):
         print("Prompt tokens", response.usage.prompt_tokens)
         print("Completion tokens", response.usage.completion_tokens)
 
-    
+# This function takes in the scraped text elements and analyzes it with an LLM
+def analyzeTextElements(text_content):
+    print("Text")
+
+# This function takes in the scraped media elements and analyzes it with an LLM
+def analyzeVideoElements(video_content):
+    print("Video")
+
+# This function takes in the scraped image elements and analyzes it with an LLM
+def analyzeImageElements(image_content):
+    print("Image")
+
+# This function takes in the scraped audio elements and analyzes it with an LLM
+def analyzeAudioElements(audio_content):
+    print("Audio")
+
+# This function takes in the scraped code elements and analyzes it with an LLM
+def analyzeCodeElements(code_cotent):
+    print("Code")
+
+# This function takes in the result of each LLLM and generates the knowledge graph
+def aggregateOutput():
+    print("Result")
+
+
 def main():
 
     url = "https://www.amazon.com/All-New-release-Smart-speaker-Charcoal/dp/B09B8V1LZ3/ref=pd_ci_mcx_mh_mcx_views_0?pd_rd_w=M1hYW&content-id=amzn1.sym.352fa4e9-2aa8-47c3-b5ac-8a90ddbece20%3Aamzn1.symc.40e6a10e-cbc4-4fa5-81e3-4435ff64d03b&pf_rd_p=352fa4e9-2aa8-47c3-b5ac-8a90ddbece20&pf_rd_r=V0XCAW7K2H716Y192XC5&pd_rd_wg=P6WEm&pd_rd_r=760361b1-d515-438e-bf3d-ede82fbbfce9&pd_rd_i=B09B8V1LZ3"
