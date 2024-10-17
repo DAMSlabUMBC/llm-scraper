@@ -170,7 +170,6 @@ def analyzeImageElements(image_content):
     processor = BlipProcessor.from_pretrained('Salesforce/blip-image-captioning-base')
     model = BlipForConditionalGeneration.from_pretrained('Salesforce/blip-image-captioning-base')
 
-
      # Move model to GPU if available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
