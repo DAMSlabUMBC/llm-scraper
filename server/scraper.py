@@ -9,6 +9,9 @@ from PIL import Image
 
 load_dotenv()
 
+# OpenAI API Key
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 def scrape_website(url):
 
     # Retrieve the HTML Content of a Page
@@ -68,27 +71,11 @@ def scrape_website(url):
 
     code_content = json.dumps([elem.get_text(strip=True) for elem in code_elements])
 
+    # Return the extracted contents
     return text_content, video_content, image_content, audio_content, link_content, code_content
-
-def analyze_with_llm(combined_content):
-
-    # Pass the HTML content into gpt
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Extract key the code and explain to me what it does"},
-            {"role": "user", "content": combined_content}
-        ]
-    )
-    return response.choices[0].message.content
 
 def new_analyze_with_llm(text, media, links):
     
-    # Pass the HTML content into gpt
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
     media_content = f"Media {media}"
 
 
@@ -156,11 +143,26 @@ def new_analyze_with_llm(text, media, links):
 
 # This function takes in the scraped text elements and analyzes it with an LLM
 def analyzeTextElements(text_content):
-    print("Text")
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Extract key the code and explain to me what it does"},
+            {"role": "user", "content": text_content}
+        ]
+    )
+    return response.choices[0].message.content
 
 # This function takes in the scraped media elements and analyzes it with an LLM
 def analyzeVideoElements(video_content):
-    print("Video")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Extract key the code and explain to me what it does"},
+            {"role": "user", "content": video_content}
+        ]
+    )
+    return response.choices[0].message.content
 
 # This function takes in the scraped image elements and analyzes it with an LLM
 def analyzeImageElements(image_content):
@@ -168,11 +170,25 @@ def analyzeImageElements(image_content):
 
 # This function takes in the scraped audio elements and analyzes it with an LLM
 def analyzeAudioElements(audio_content):
-    print("Audio")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Extract key the code and explain to me what it does"},
+            {"role": "user", "content": audio_content}
+        ]
+    )
+    return response.choices[0].message.content
 
 # This function takes in the scraped code elements and analyzes it with an LLM
 def analyzeCodeElements(code_cotent):
-    print("Code")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Extract key the code and explain to me what it does"},
+            {"role": "user", "content": code_cotent}
+        ]
+    )
+    return response.choices[0].message.content
 
 # This function takes in the result of each LLLM and generates the knowledge graph
 def aggregateOutput():
@@ -184,19 +200,17 @@ def main():
     url = "https://www.amazon.com/All-New-release-Smart-speaker-Charcoal/dp/B09B8V1LZ3/ref=pd_ci_mcx_mh_mcx_views_0?pd_rd_w=M1hYW&content-id=amzn1.sym.352fa4e9-2aa8-47c3-b5ac-8a90ddbece20%3Aamzn1.symc.40e6a10e-cbc4-4fa5-81e3-4435ff64d03b&pf_rd_p=352fa4e9-2aa8-47c3-b5ac-8a90ddbece20&pf_rd_r=V0XCAW7K2H716Y192XC5&pd_rd_wg=P6WEm&pd_rd_r=760361b1-d515-438e-bf3d-ede82fbbfce9&pd_rd_i=B09B8V1LZ3"
     #urlCodeTest = "https://mui.com/material-ui/react-modal/"
     
-    text_content, media_content, link_content, code_content = scrape_website(url)
+    text_content, video_content, image_content, audio_content, link_content, code_content = scrape_website(url)
 
-    #analysis = analyze_with_llm(combined_content)
+    analyzeTextElements(text_content)
 
-    new_analyze_with_llm(text_content, media_content, link_content)
+    analyzeVideoElements(video_content)
 
-    # analyze_with_llm(code_content)
+    analyzeImageElements(image_content)
 
-    #new_analysis = new_analyze_with_llm(text_content, media_content, link_content)
+    analyzeAudioElements(audio_content)
 
-    #print(new_analysis)
-
-    #print(analysis)
+    analyzeCodeElements(code_content)
 
 if __name__ == "__main__":
     main()
