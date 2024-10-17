@@ -52,7 +52,7 @@ def scrape_website(url):
     audio_content = []
     for audio in audio_elements:
         audio_src = audio.get('src')
-        if video_src:
+        if audio_src:
             audio_content.append(audio_src)
 
     # Extract the href attribute of the link elements
