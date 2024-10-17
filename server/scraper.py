@@ -2,10 +2,12 @@ import requests
 import os
 import ast
 import json
+import torch
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from PIL import Image
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 load_dotenv()
 
@@ -66,9 +68,6 @@ def scrape_website(url):
             link_content.append(link_href)
 
     # Extract and serialize the text content of code elements
-    for snippet in code_elements:
-        print(snippet.text)
-
     code_content = json.dumps([elem.get_text(strip=True) for elem in code_elements])
 
     # Return the extracted contents
@@ -166,7 +165,35 @@ def analyzeVideoElements(video_content):
 
 # This function takes in the scraped image elements and analyzes it with an LLM
 def analyzeImageElements(image_content):
-    print("Image")
+
+    # Initialize the processor and model
+    processor = BlipProcessor.from_pretrained('Salesforce/blip-image-captioning-base')
+    model = BlipForConditionalGeneration.from_pretrained('Salesforce/blip-image-captioning-base')
+
+     # Move model to GPU if available
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+
+    for image_url in image_content:
+        try:
+            # Load the image from the URL
+            response = requests.get(image_url, stream=True)
+            response.raise_for_status()
+            image = Image.open(response.raw).convert('RGB')
+
+            # Preprocess the image and prepare inputs
+            inputs = processor(images=image, return_tensors="pt").to(device)
+
+            # Generate caption
+            outputs = model.generate(**inputs)
+            caption = processor.decode(outputs[0], skip_special_tokens=True)
+
+            print(f"Image URL: {image_url}")
+            print(f"Caption: {caption}\n")
+
+        except Exception as e:
+            print(f"Failed to process image {image_url}: {e}")
+
 
 # This function takes in the scraped audio elements and analyzes it with an LLM
 def analyzeAudioElements(audio_content):
@@ -198,19 +225,21 @@ def aggregateOutput():
 def main():
 
     url = "https://www.amazon.com/All-New-release-Smart-speaker-Charcoal/dp/B09B8V1LZ3/ref=pd_ci_mcx_mh_mcx_views_0?pd_rd_w=M1hYW&content-id=amzn1.sym.352fa4e9-2aa8-47c3-b5ac-8a90ddbece20%3Aamzn1.symc.40e6a10e-cbc4-4fa5-81e3-4435ff64d03b&pf_rd_p=352fa4e9-2aa8-47c3-b5ac-8a90ddbece20&pf_rd_r=V0XCAW7K2H716Y192XC5&pd_rd_wg=P6WEm&pd_rd_r=760361b1-d515-438e-bf3d-ede82fbbfce9&pd_rd_i=B09B8V1LZ3"
-    #urlCodeTest = "https://mui.com/material-ui/react-modal/"
+    urlCodeTest = "https://mui.com/material-ui/react-modal/"
     
     text_content, video_content, image_content, audio_content, link_content, code_content = scrape_website(url)
 
-    analyzeTextElements(text_content)
+    textResult = analyzeTextElements(text_content)
 
-    analyzeVideoElements(video_content)
+    videoResult = analyzeVideoElements(video_content)
 
-    analyzeImageElements(image_content)
+    imageResult = analyzeImageElements(image_content)
 
-    analyzeAudioElements(audio_content)
+    audioResult = analyzeAudioElements(audio_content)
 
-    analyzeCodeElements(code_content)
+    codeResult = analyzeCodeElements(code_content)
+
+    print(imageResult)
 
 if __name__ == "__main__":
     main()
