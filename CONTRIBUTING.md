@@ -33,7 +33,7 @@ Activate the environment to start using it.
 Install the required Python packages for the scraper to run:
 
 ```bash
-pip install -r requirements. txt
+pip install -r requirements.txt
 ```
 
 ### 5. Create a `.env` file
