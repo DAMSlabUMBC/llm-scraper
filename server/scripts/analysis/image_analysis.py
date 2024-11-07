@@ -13,6 +13,9 @@ def analyze_image_elements(image_content):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
+    # Stored the captions generated from the images
+    image_caption = ""
+
     for image_url in image_content:
         try:
             # Load the image from the URL
@@ -30,5 +33,9 @@ def analyze_image_elements(image_content):
             print(f"Image URL: {image_url}")
             print(f"Caption: {caption}\n")
 
+            image_caption += caption + '\n'
+
         except Exception as e:
             print(f"Failed to process image {image_url}: {e}")
+    
+    return image_caption

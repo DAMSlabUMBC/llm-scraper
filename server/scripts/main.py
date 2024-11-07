@@ -5,6 +5,7 @@ from analysis.text_analysis import analyze_text_elements
 from analysis.code_analysis import analyze_code_elements
 from analysis.audio_analysis import analyze_audio_elements
 from analysis.video_analysis import analyze_video_elements
+from analysis.generate import generate
 from agents.model import response
 
 def main():
@@ -13,19 +14,22 @@ def main():
     # url = "https://www.target.com/p/bissell-little-green-hydrosteam-pet-3605/-/A-88682898#lnk=sametab"
     #url = "https://nowsecure.nl"
     #url = "https://www.walmart.com/ip/Nikon-D3500-DSLR-Camera-with-18-55mm-Lens-1590-Starter-Bundle/566604061?athAsset=eyJhdGhjcGlkIjoiNTY2NjA0MDYxIiwiYXRoc3RpZCI6IkNTMDIwIiwiYXRoYW5jaWQiOiJJdGVtQ2Fyb3VzZWwiLCJhdGhyayI6MC4wfQ%3D%3D&athena=true&sid=a494c519-54de-4fe5-a52a-edf6384f6d7d"
-    text_content, image_content, code_content = scrape_website(url)
+    text_content, image_content, code_content, video_content = scrape_website(url)
 
     text_result = analyze_text_elements(text_content)
-    # video_result = analyze_video_elements(video_content)
-    # image_result = analyze_image_elements(image_content)
+    video_result = analyze_video_elements(video_content)
+    image_result = analyze_image_elements(image_content)
     # audio_result = analyze_audio_elements(audio_content)
-    # code_result = analyze_code_elements(code_content)
+    code_result = analyze_code_elements(code_content)
+    generate_result = generate(text_result, video_result, image_result, code_result)
 
     print(text_result)
-    # print(video_result)
-    # print(image_result)
+    print(video_result)
+    print(image_result)
     # print(audio_result)
-    # print(code_result)
+    print(code_result)
+
+    print('[😻] Final Response: ', generate_result)
 
 
     # This is the multi-agent workflow code
