@@ -149,6 +149,7 @@ def normal_scraper(url):
     save_links(subfolder['links'], a_links, "a_links.txt")
     save_links(subfolder['links'], video_links, "video_links.txt")
     save_links(subfolder['links'], image_links, "image_links.txt")
+    return text_content, code_content
 
 
 #https://www.ffmpeg.org/documentation.html

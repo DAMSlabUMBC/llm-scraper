@@ -1,61 +1,75 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from fake_useragent import UserAgent
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-import requests
+from util.folder_manager import create_folder
+from util.content_saver import save_content, save_links
+from util.media_downloader import ffmpeg_support, image_download, js_download
 import json
 
 def scrape_website(url):
 
-    # Retrieve the HTML Content of a Page
-    page = requests.get(url)
+    # Selenium WebDriver Configuration
+    options = Options()
+    options.headless = True
+    fake_useragent = UserAgent()
+    options.add_argument(f'user-agent={fake_useragent.random}')
     
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+    html = driver.page_source
+
     # Parse the HTML code with Beautiful Soup
-    soup = BeautifulSoup(page.content, 'html.parser')
-
-    # Extract text, media, link, and code elements
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Create a dynamic folder based on the URL's hostname
+    subfolder = create_folder(driver)
+    
+    # Extract and join the text content
+    print('[✅] Extracting Text')
     text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
+    text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements])
 
-    video_elements = soup.find_all('video')
-
-    audio_elements = soup.find_all('audio')
-
-    image_elements = soup.find_all('img')
-
-    link_elements = soup.find_all('a')
-    
+    # Extract and serialize the text content of code elements
+    print('[✅] Extracting Code')
     code_elements = soup.find_all('code')
-
-    # Join text content
-    text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements]) 
+    code_content = json.dumps([elem.get_text(strip=True) for elem in code_elements])
 
     # Extract the src attributes of video elements
-    video_content = []
-    for video in video_elements:
-        video_src = video.get('src')
-        if video_src:
-            video_content.append(video_src)
-    
-    # Extract the src attributes of video elements
+    print('[✅] Extracting Images')
+    image_elements = soup.find_all('img')
     image_content = []
     for image in image_elements:
         image_src = image.get('src')
         if image_src:
             image_content.append(image_src)
+        source = image.find('source')
+        for source in image.find_all('source'):
+            src = source.get('src')
+            if src:
+                image_content.append(src)
+
+    # Extract and download the video links
+    print('[✅] Extracting Video')
+    video_elements = soup.find_all('video')
+    video_links = []
+
+    for i, video in enumerate(video_elements):
+        src = video.get('src')
+        if src:
+            full_video_url = urljoin(url, src)
+            video_links.append(full_video_url)
+            ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i)
+        source = video.find('source')
+        for source in video.find_all('source'):
+            src = source.get('src')
+            if src:
+                full_video_url = urljoin(url, src)
+                video_links.append(full_video_url)
+                ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i)
     
-    # Extract the src attributes of audio elements
-    audio_content = []
-    for audio in audio_elements:
-        audio_src = audio.get('src')
-        if audio_src:
-            audio_content.append(audio_src)
+    # Save all collected links in the links folder
+    save_links(subfolder['links'], video_links, "video_links.txt")
 
-    # Extract the href attribute of the link elements
-    link_content = []
-    for link in link_elements:
-        link_href = link.get('href')
-        if link_href:
-            link_content.append(link_href)
-
-    # Extract and serialize the text content of code elements
-    code_content = json.dumps([elem.get_text(strip=True) for elem in code_elements])
-
-    # Return the extracted contents
-    return text_content, video_content, image_content, audio_content, link_content, code_content
+    return text_content, image_content, code_content
