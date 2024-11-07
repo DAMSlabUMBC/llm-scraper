@@ -8,8 +8,9 @@ We use Beautiful Soup to parse HTML content and send each unique element to an L
 
 | Feature                                                                                                                                                     | Model            |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Knowledge Graph                                                                                                                                             | OpenAI ✅ |
+| WebDriver                                                                                                                                                   | Selenium ✅       |
 | HTML Parser                                                                                                                                                 | Beautiful Soup ✅ |
+| Knowledge Graph                                                                                                                                             | OpenAI ✅ |
 | Analyze Text                                                                                                                                                | OpenAI ✅         |
 | Analyze Images                                                                                                                                              | BLIP ✅           |
 | Analyze Videos                                                                                                                                              | OpenAI ✅         |
