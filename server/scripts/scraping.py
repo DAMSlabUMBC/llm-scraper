@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from util.folder_manager import create_folder
 from util.content_saver import save_content, save_links
-from util.media_downloader import ffmpeg_support, image_download, js_download
+from util.media_downloader import ffmpeg_support
 import json
 
 def scrape_website(url):
@@ -54,22 +54,22 @@ def scrape_website(url):
     print('[✅] Extracting Video')
     video_elements = soup.find_all('video')
     video_links = []
+    video_content = []
 
     for i, video in enumerate(video_elements):
         src = video.get('src')
         if src:
             full_video_url = urljoin(url, src)
             video_links.append(full_video_url)
-            ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i)
+            video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
         source = video.find('source')
         for source in video.find_all('source'):
             src = source.get('src')
             if src:
                 full_video_url = urljoin(url, src)
                 video_links.append(full_video_url)
-                ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i)
-    
-    # Save all collected links in the links folder
-    save_links(subfolder['links'], video_links, "video_links.txt")
+                video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
 
-    return text_content, image_content, code_content
+    print('[💆‍♂️] Video Content Baby: ', video_content)
+
+    return text_content, image_content, code_content, video_content

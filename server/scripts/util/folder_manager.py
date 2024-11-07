@@ -8,7 +8,7 @@ def create_folder(driver):
     os.makedirs(base_folder, exist_ok=True)
     
     # Create subfolders
-    content_types = ['text', 'video', 'audio', 'image', 'links', 'code', 'page']
+    content_types = ['video', 'audio']
     subfolders = {content_type: os.path.join(base_folder, content_type) for content_type in content_types}
     for folder in subfolders.values():
         os.makedirs(folder, exist_ok=True)

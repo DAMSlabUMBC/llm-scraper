@@ -2,10 +2,15 @@ import os
 import requests
 import base64
 import subprocess
+import whisper
+
+model = whisper.load_model("base")
 
 #https://www.ffmpeg.org/documentation.html
 def ffmpeg_support(url, folder, media_type, index, extension="mp4"):
     output_filename = os.path.join(folder, f"{media_type}_{index}.{extension}")
+    audio_filename = os.path.join(folder, f"{media_type}_{index}.mp3")
+    
     try:
         if url.startswith("data:"):
             # Handle data URL
@@ -32,6 +37,23 @@ def ffmpeg_support(url, folder, media_type, index, extension="mp4"):
             ffmpeg_command = ["ffmpeg", "-i", url, output_filename]
             subprocess.run(ffmpeg_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print(f"[✅] Saved {media_type}_{index} to {output_filename}")
+
+        # Convert video to audio
+        ffmpeg_audio_command = ["ffmpeg", "-i", output_filename, "-q:a", "0", "-map", "a", audio_filename]
+        subprocess.run(ffmpeg_audio_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Transcribe audio with Whisper
+        result = model.transcribe(audio_filename)
+        transcription_text = result["text"]
+
+        # Optionally save transcription to a text file
+        transcription_file = os.path.join(folder, f"{media_type}_{index}_transcription.txt")
+        with open(transcription_file, "w") as f:
+            f.write(transcription_text)
+        
+        print(f"[✅] Transcription saved to {transcription_file}")
+
+        return transcription_text
     except subprocess.CalledProcessError as e:
         print(f"[🛑] FFmpeg failed {media_type}: {e}")
     except Exception as e:
