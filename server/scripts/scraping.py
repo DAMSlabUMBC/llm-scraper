@@ -15,7 +15,10 @@ def scrape_website(url):
     options.headless = True
     fake_useragent = UserAgent()
     options.add_argument(f'user-agent={fake_useragent.random}')
-    
+    options.add_argument("--headless")  # Run headless
+    options.add_argument("--no-sandbox")  # Necessary for some restricted environments
+    options.add_argument("--disable-dev-shm-usage")  # Overcome resource limitations
+        
     driver = webdriver.Chrome(options=options)
     driver.get(url)
     html = driver.page_source

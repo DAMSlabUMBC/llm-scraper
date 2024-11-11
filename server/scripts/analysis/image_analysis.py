@@ -2,6 +2,7 @@ import requests
 import torch
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
+#from tqdm import tqdm
 
 def analyze_image_elements(image_content):
 
@@ -30,8 +31,8 @@ def analyze_image_elements(image_content):
             outputs = model.generate(**inputs)
             caption = processor.decode(outputs[0], skip_special_tokens=True)
 
-            print(f"Image URL: {image_url}")
-            print(f"Caption: {caption}\n")
+            #print(f"Image URL: {image_url}")
+            #print(f"Caption: {caption}\n")
 
             image_caption += caption + '\n'
 
