@@ -2,7 +2,7 @@ import requests
 import torch
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
-#from tqdm import tqdm
+from tqdm import tqdm
 
 def analyze_image_elements(image_content):
 
@@ -17,7 +17,7 @@ def analyze_image_elements(image_content):
     # Stored the captions generated from the images
     image_caption = ""
 
-    for image_url in image_content:
+    for image_url in tqdm(image_content):
         try:
             # Load the image from the URL
             response = requests.get(image_url, stream=True)

@@ -5,7 +5,7 @@ from analysis.text_analysis import analyze_text_elements
 from analysis.code_analysis import analyze_code_elements
 from analysis.audio_analysis import analyze_audio_elements
 from analysis.video_analysis import analyze_video_elements
-from analysis.generate import generate
+from analysis.generate import generate, parse_string_to_list
 from agents.model import response
 
 def main():
@@ -30,6 +30,20 @@ def main():
     print(code_result)
 
     print('[😻] Final Response: ', generate_result)
+
+    result_list = parse_string_to_list(generate_result)
+    print(type(result_list))
+    print(result_list)
+
+    """triplets_list = []
+
+    for triplet in result_list:
+        triplets_list.append(str(triplet))"""
+
+    with open("triplets.txt", "w") as file:
+        for triplet in result_list:
+            file.writelines(str(triplet))
+            file.write("\n")
 
 
     # This is the multi-agent workflow code
