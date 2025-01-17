@@ -22,9 +22,9 @@ def main():
         exit()
 
     text_result = analyze_text_elements(text_content)
-    video_result = analyze_text_elements(video_content)
-    code_result = analyze_text_elements(code_content)
-    image_result = []
+    video_result = analyze_video_elements(video_content)
+    code_result = analyze_code_elements(code_content)
+    image_result = analyze_image_elements(image_content)
 
     print("\n=== Analysis Results ===")
     print("Text Analysis:", text_result)
@@ -33,9 +33,6 @@ def main():
     print("Image Analysis:", image_result)
     print("=====================\n")
 
-    # text_content = text_content + " " + " ".join(image_result)
-    
-    # entities = analyze_text_elements(text_content)
     entities = f"""
         Text: {text_result}
         Video: {video_result}
@@ -43,12 +40,7 @@ def main():
         Code: {code_result}
     """
     print("Entities:",entities)
-    generate_result = generate(entities, text_content)
-    #print("text_content", text_content)
-    #print(type(image_result))
-    #print("after:", len(image_result))
-    # print(audio_result)
-    #print(code_result)
+    generate_result = generate(entities)
 
     print('[😻] Final Response: ', generate_result)
 
@@ -66,32 +58,5 @@ def main():
             file.writelines(str(triplet))
             file.write("\n")
             
-    
-
-
-    # This is the multi-agent workflow code
-
-    # workflow = response()
-
-    # initial_state = {
-    #     "task": "Analyze scraped content",
-    #     "text": "",
-    #     "image": "",
-    #     "content": [],  # Empty list to aggregate results
-    #     "draft": "",
-    #     "scraped_text": text_content,
-    #     "scraped_images": "",
-    # }
-
-
-    # Run the workflow using stream and get the final state
-    # final_state = None
-    # for state in workflow.graph.stream(initial_state):
-    #     final_state = state
-
-    # print(final_state['generate']['draft'])
-
-    # test.everything(url)
-
 if __name__ == "__main__":
     main()

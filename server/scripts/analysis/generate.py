@@ -1,12 +1,7 @@
 from setup import client
 import re
 
-def generate(entities, text_content):
-
-    content = f"""
-    Entities: {entities}
-    Text: {text_content}
-    """
+def generate(entities):
 
     # original prompt: Create a knowledge graph from all of the provided entities.
     response = client.chat.completions.create(
@@ -55,7 +50,7 @@ def generate(entities, text_content):
     Output: a set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
                                         """
             },
-            {"role": "user", "content": content}
+            {"role": "user", "content": entities}
         ]
     )
     print("result", response.choices[0].message.content)
