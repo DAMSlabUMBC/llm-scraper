@@ -18,29 +18,31 @@ def main():
     #url = "https://www.walmart.com/ip/Nikon-D3500-DSLR-Camera-with-18-55mm-Lens-1590-Starter-Bundle/566604061?athAsset=eyJhdGhjcGlkIjoiNTY2NjA0MDYxIiwiYXRoc3RpZCI6IkNTMDIwIiwiYXRoYW5jaWQiOiJJdGVtQ2Fyb3VzZWwiLCJhdGhyayI6MC4wfQ%3D%3D&athena=true&sid=a494c519-54de-4fe5-a52a-edf6384f6d7d"
     text_content, image_content, code_content, video_content = scrape_website(url)
     
-    #print("text content", text_content)
-    #print("image content", image_content)
-    
     if text_content == "" and image_content == "" and code_content == "" and video_content == "":
         exit()
 
-    #text_result = analyze_text_elements(text_content)
-    #video_result = analyze_video_elements(video_content)
-    #print("before:",len(image_content))
-    image_result = analyze_image_elements(image_content[:30])
-    # audio_result = analyze_audio_elements(audio_content)
-    #code_result = analyze_code_elements(code_content)
-    #generate_result = generate(text_result, video_result, image_result, code_result)
+    text_result = analyze_text_elements(text_content)
+    video_result = analyze_text_elements(video_content)
+    code_result = analyze_text_elements(code_content)
+    image_result = []
 
-    #print(text_result)
-    #print(video_result)
-    #print(image_result)
-    text_content = text_content + " " + " ".join(image_result)
+    print("\n=== Analysis Results ===")
+    print("Text Analysis:", text_result)
+    print("Code Analysis:", code_result)
+    print("Video Analysis:", video_result)
+    print("Image Analysis:", image_result)
+    print("=====================\n")
+
+    # text_content = text_content + " " + " ".join(image_result)
     
-    print("TEXT:", text_content)
-    
-    entities = analyze_text_elements(text_content)
-    print(entities)
+    # entities = analyze_text_elements(text_content)
+    entities = f"""
+        Text: {text_result}
+        Video: {video_result}
+        Image: {image_result}
+        Code: {code_result}
+    """
+    print("Entities:",entities)
     generate_result = generate(entities, text_content)
     #print("text_content", text_content)
     #print(type(image_result))

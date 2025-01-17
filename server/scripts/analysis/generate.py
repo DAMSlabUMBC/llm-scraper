@@ -8,9 +8,6 @@ def generate(entities, text_content):
     Text: {text_content}
     """
 
-    print("content")
-    print(content)
-
     # original prompt: Create a knowledge graph from all of the provided entities.
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -52,6 +49,7 @@ def generate(entities, text_content):
     research -> hasTopic -> device
     privacyPolicy -> follows -> regulation
 
+    Do not include the word json in front of your result.
     If no triplets are found, return an empty list ([]).
 
     Output: a set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
