@@ -55,6 +55,8 @@ def generate(entities, text_content):
     If no triplets are found, return an empty list ([]).
 
     Output: a set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
+    
+    DO NOT RETURN A JSON.
                                         """
             },
             {"role": "user", "content": content}
@@ -64,18 +66,26 @@ def generate(entities, text_content):
     return response.choices[0].message.content
 
 def parse_string_to_list(input_string):
-    # Step 1: Add quotes around unquoted words using regex
-    # Matches any alphanumeric word or slash-separated words not already quoted
-    formatted_string = re.sub(r'(?<!")\b[a-zA-Z0-9_/]+\b(?!")', r'"\g<0>"', input_string)
-
-    # Step 2: Replace square brackets for the list and clean up the parentheses
-    formatted_string = formatted_string.replace("[", "[").replace("]", "]")
-
-    # Step 3: Safely evaluate the formatted string into a Python object
+    # Step 1: Remove unnecessary whitespace and normalize the input string
+    input_string = input_string.strip()
+    
+    # Step 2: Replace spaces in multi-word entities with camel-case format
+    # Example: 'Govee Smart Light Bulbs' -> 'GoveeSmartLightBulbs'
+    input_string = re.sub(r"'([a-zA-Z]+(?:\s+[a-zA-Z]+)+)'", 
+                          lambda m: f"'{''.join(word.capitalize() for word in m.group(1).split())}'", 
+                          input_string)
+    
+    # Step 3: Evaluate the string to transform it into a Python object (list of tuples)
     try:
-        parsed_list = eval(formatted_string)
+        parsed_list = eval(input_string)
     except SyntaxError as e:
         print("Error parsing string:", e)
         return None
-
-    return parsed_list
+    
+    # Step 4: Convert each tuple into the expected string format
+    result = [
+        str(item).replace(" ", "")  # Remove extra spaces for compact formatting
+        for item in parsed_list
+    ]
+    
+    return result
