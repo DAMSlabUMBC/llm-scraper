@@ -1,0 +1,46 @@
+smart speakers
+smart thermostats
+smart lighting
+smart plugs
+smart switches
+smart security systems
+smart appliances
+fitness trackers
+smart watches
+healthcare wearables
+AR/VR devices
+industrial sensors
+smart manufacturing devices
+asset tracking devices
+predictive maintenance devices
+smart energy meters
+remote patient monitoring devices
+smart insulin pens
+wearable ECG monitors
+wearable EKG monitors
+IoMT implants
+telemedicine devices
+connected cars
+vehicle telematics devices
+smart traffic signals
+fleet management devices
+smart meters
+connected streetlights
+public wifi nodes
+environmental monitoring sensors
+smart waste management systems
+smart irrigation systems
+drones for agriculture
+livestock monitoring devices
+weather monitoring systems
+beacon technology
+smart vending machines
+inventory tracking sensors
+smart tvs
+gaming consoles
+IoT cameras
+solar monitoring systems
+battery management systems
+flood sensors
+earthquake sensors
+wildfire detection systems
