@@ -1,3 +1,5 @@
+import sys
+sys.dont_write_bytecode = True
 from setup import client
 from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
@@ -7,7 +9,6 @@ from analysis.audio_analysis import analyze_audio_elements
 from analysis.video_analysis import analyze_video_elements
 from analysis.generate import generate, parse_string_to_list
 from agents.model import response
-from KG import createKG
 
 def main():
     #url = 'https://web.dev/articles/video-and-source-tags'
@@ -15,38 +16,31 @@ def main():
     #url = "https://www.target.com/p/bissell-little-green-hydrosteam-pet-3605/-/A-88682898#lnk=sametab"
     #url = "https://nowsecure.nl"
     #url = "https://www.walmart.com/ip/Nikon-D3500-DSLR-Camera-with-18-55mm-Lens-1590-Starter-Bundle/566604061?athAsset=eyJhdGhjcGlkIjoiNTY2NjA0MDYxIiwiYXRoc3RpZCI6IkNTMDIwIiwiYXRoYW5jaWQiOiJJdGVtQ2Fyb3VzZWwiLCJhdGhyayI6MC4wfQ%3D%3D&athena=true&sid=a494c519-54de-4fe5-a52a-edf6384f6d7d"
-    triplets_file = "triplets3.txt"
     text_content, image_content, code_content, video_content = scrape_website(url)
-    
-    #print("text content", text_content)
-    #print("image content", image_content)
     
     if text_content == "" and image_content == "" and code_content == "" and video_content == "":
         exit()
 
-    #text_result = analyze_text_elements(text_content)
-    #video_result = analyze_video_elements(video_content)
-    #print("before:",len(image_content))
-    #image_result = analyze_image_elements(image_content[:30])
-    # audio_result = analyze_audio_elements(audio_content)
-    #code_result = analyze_code_elements(code_content)
-    #generate_result = generate(text_result, video_result, image_result, code_result)
+    text_result = analyze_text_elements(text_content)
+    video_result = analyze_video_elements(video_content)
+    code_result = analyze_code_elements(code_content)
+    image_result = analyze_image_elements(image_content)
 
-    #print(text_result)
-    #print(video_result)
-    #print(image_result)
-    #text_content = text_content + " " + " ".join(image_result)
-    
-    print("TEXT:", text_content)
-    
-    entities = analyze_text_elements(text_content)
-    print(entities)
-    generate_result = generate(entities, text_content)
-    #print("text_content", text_content)
-    #print(type(image_result))
-    #print("after:", len(image_result))
-    # print(audio_result)
-    #print(code_result)
+    print("\n=== Analysis Results ===")
+    print("Text Analysis:", text_result)
+    print("Code Analysis:", code_result)
+    print("Video Analysis:", video_result)
+    print("Image Analysis:", image_result)
+    print("=====================\n")
+
+    entities = f"""
+        Text: {text_result}
+        Video: {video_result}
+        Image: {image_result}
+        Code: {code_result}
+    """
+    print("Entities:",entities)
+    generate_result = generate(entities)
 
     print('[😻] Final Response: ', generate_result)
 
@@ -59,40 +53,10 @@ def main():
     for triplet in result_list:
         triplets_list.append(str(triplet))
 
-    with open(triplets_file, "w") as file:
+    with open("triplets.txt", "w") as file:
         for triplet in result_list:
             file.writelines(str(triplet))
             file.write("\n")
-
-    # calls the KG code
-    createKG(triplets_file)
             
-    
-
-
-    # This is the multi-agent workflow code
-
-    # workflow = response()
-
-    # initial_state = {
-    #     "task": "Analyze scraped content",
-    #     "text": "",
-    #     "image": "",
-    #     "content": [],  # Empty list to aggregate results
-    #     "draft": "",
-    #     "scraped_text": text_content,
-    #     "scraped_images": "",
-    # }
-
-
-    # Run the workflow using stream and get the final state
-    # final_state = None
-    # for state in workflow.graph.stream(initial_state):
-    #     final_state = state
-
-    # print(final_state['generate']['draft'])
-
-    # test.everything(url)
-
 if __name__ == "__main__":
     main()

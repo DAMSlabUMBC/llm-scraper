@@ -1,15 +1,7 @@
 from setup import client
 import re
 
-def generate(entities, text_content):
-
-    content = f"""
-    Entities: {entities}
-    Text: {text_content}
-    """
-
-    print("content")
-    print(content)
+def generate(entities):
 
     # original prompt: Create a knowledge graph from all of the provided entities.
     response = client.chat.completions.create(
@@ -52,6 +44,7 @@ def generate(entities, text_content):
     research -> hasTopic -> device
     privacyPolicy -> follows -> regulation
 
+    Do not include the word json in front of your result.
     If no triplets are found, return an empty list ([]).
 
     Output: a set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
@@ -59,7 +52,7 @@ def generate(entities, text_content):
     DO NOT RETURN A JSON.
                                         """
             },
-            {"role": "user", "content": content}
+            {"role": "user", "content": entities}
         ]
     )
     print("result", response.choices[0].message.content)
