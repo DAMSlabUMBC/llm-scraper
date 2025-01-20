@@ -195,12 +195,7 @@ def createKG(triplets_file):
     # Initialize the client for ArangoDB.
     client = ArangoClient()
 
-    # Connect to "_system" database as root user.
-    sys_db = client.db("_system", username="root", password="Cleffa#173")
-
-    # Create a new database named "test".
-    #sys_db.create_database("IoT-KG")
-    print(sys_db.databases())
+    # connect to IoT-KG database as root user
     db = client.db("IoT-KG", username="root", password="Cleffa#173")
 
     # creates a new graph
@@ -449,14 +444,12 @@ def createKG(triplets_file):
 
         # makes an edge between the from and to nodes
         makeEdge(fromNode, toNode, relationship, graph)
-        #print(f"Triplet: {from_node} --{relationship}--> {to_node}")
 
-        """print("fromNode", fromNode)
-        print("toNode", toNode)
-        print("relationship", relationship)"""
+        # adds nodes to the visual graph
         G.add_node(fromNode[1], type=fromNode[0])
         G.add_node(toNode[1], type=toNode[0])
 
+        # adds the edge to the visual graph
         G.add_edge(fromNode[1], toNode[1], relationship=relationship)
 
     # configures the node colors per type

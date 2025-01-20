@@ -8,8 +8,24 @@ from analysis.video_analysis import analyze_video_elements
 from analysis.generate import generate, parse_string_to_list
 from agents.model import response
 from KG import createKG
+from url_extraction.scrapping_manager import ScrappingManager
+
+# all defined modules
+AmazonModule = "Amazon"
 
 def main():
+
+    # makes a new url extractor
+    url_extractor = ScrappingManager()
+
+    # initializes the modules the user wants to add to the url extractor
+    url_extractor.initializeModule(AmazonModule)
+
+    # fetches the urls of a module
+    URL_set = url_extractor.getProductURLs(AmazonModule, "search_queries.txt")
+
+    print(URL_set)
+
     #url = 'https://web.dev/articles/video-and-source-tags'
     url = "https://www.amazon.com/Govee-Changing-Dynamic-Bluetooth-Assistant/dp/B09B7NQT2K/ref=shss_Detail_from_B09B8V1LZ3_f_LIGHTING_to_B09B7NQT2K/147-0083935-6529626?pd_rd_w=epnts&content-id=amzn1.sym.3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_p=3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_r=54TVWMKHD7550ZERRWVY&pd_rd_wg=aN3po&pd_rd_r=055b1d6f-291d-4e43-8fe5-125446bc8ab8&pd_rd_i=B09B7NQT2K&psc=1"
     #url = "https://www.target.com/p/bissell-little-green-hydrosteam-pet-3605/-/A-88682898#lnk=sametab"
