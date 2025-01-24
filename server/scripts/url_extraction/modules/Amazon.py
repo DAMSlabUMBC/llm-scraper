@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import cloudscraper
 import requests
-
+import os
 
 
 class Amazon():
@@ -37,7 +37,7 @@ class Amazon():
 
         # configures chrome driver options
         chrome_options = Options()
-        chrome_options.binary_location = "/usr/bin/google-chrome"  # Replace with the actual path to google-chrome
+        chrome_options.binary_location = os.getenv('CHROME_PATH')  # Create a variable CHROME_PATH to your chrome extension path
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")  # Prevent sandboxing issues
         chrome_options.add_argument("--disable-dev-shm-usage")  # Fix shared memory issues

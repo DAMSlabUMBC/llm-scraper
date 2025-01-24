@@ -473,4 +473,4 @@ def createKG(triplets_file):
 
 
 if __name__ == "__main__":
-    createKG("triplets3.txt")
+    createKG("triplets.txt")
