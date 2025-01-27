@@ -73,24 +73,23 @@ class Amazon():
             stop = False
             #print("searching for next page")
             while not stop:
-                print("next page")
                 try:
                     req = self.scraper.get(url)
                     soup = BeautifulSoup(req.content, 'html.parser')
                     nextPage = soup.find('a', {"class": "s-pagination-item s-pagination-next s-pagination-button s-pagination-button-accessibility s-pagination-separator"})
-                    # class="s-pagination-item s-pagination-next s-pagination-button s-pagination-button-accessibility s-pagination-separator"
-                    #print("nextPage", nextPage)
+                    # s-pagination-item s-pagination-next s-pagination-button s-pagination-button-accessibility s-pagination-separator
                     url = self.home + nextPage["href"]
                     driver.get(url)
 
                     time.sleep(2) # wait for page to load
+                    print("next page")
 
                     # gets the links of each product on the web page
                     product_links = set(a.get_attribute('href') for a in driver.find_elements(By.CSS_SELECTOR, 'a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal'))
                     product_links = list(product_links)
 
                     product_urls.extend(product_links)
-
+                    
                 except:
                     print("no next page")
                     stop = True
