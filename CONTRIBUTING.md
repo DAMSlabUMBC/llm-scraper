@@ -41,6 +41,7 @@ Create a `.env` file in the `server` directory with the following content:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+CHROME_PATH=your_chrome_extension_path_here
 ```
 
 Replace `your_openai_api_key_here` with your actual OpenAI API key.
