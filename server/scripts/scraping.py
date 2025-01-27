@@ -32,7 +32,8 @@ def scrape_website(url):
     # Extract and join the text content
     print('[✅] Extracting Text')
     text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
-    text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements])
+    #text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements])
+    text_content = '\n'.join([elem.get_text() for elem in text_elements])
 
     # Extract and serialize the text content of code elements
     print('[✅] Extracting Code')
@@ -76,3 +77,13 @@ def scrape_website(url):
     print('[💆‍♂️] Video Content Baby: ', video_content)
 
     return text_content, image_content, code_content, video_content
+
+def preprocess(text_content):
+    new_lines = []
+
+    for line in text_content.split("\n"):
+        new_lines.append(line.strip())
+
+    new_lines = list(set(new_lines))
+
+    return "\n".join(new_lines)
