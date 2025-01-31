@@ -7,6 +7,13 @@ from util.folder_manager import create_folder
 from util.content_saver import save_content, save_links
 from util.media_downloader import ffmpeg_support
 import json
+import re
+
+#PARSE_LIST = ["$", "rating", "review", "recommendation", "deliver", "%", "quantity", "star", "ship", "return"]
+TIME_PATTERN = r"^(?:[0-9]|[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$"
+FORBIDDEN_NUMBERS = r"^\d+(\.\d+)?\+?$"
+PRICE_PATTERN = r'[\$\€\£\₹]?\s?\d{1,3}(?:,\d{3})*(?:\.\d{2})?'
+
 
 def scrape_website(url):
 
@@ -79,11 +86,74 @@ def scrape_website(url):
     return text_content, image_content, code_content, video_content
 
 def preprocess(text_content):
-    new_lines = []
+    parsed_lines = []
+    clean_lines = []
+    no_duplicates = []
+
+    # removing the duplicates
+    for line in text_content.split("\n"):
+        no_duplicates.append(line.strip())
+
+    no_duplicates = list(set(no_duplicates))
+
+    for line in no_duplicates:
+        new_line = []
+        for word in line.split():
+
+            """if not bool(re.match(PRICE_PATTERN, word)):
+                new_line.append(word)"""
+
+            # removes prices and percentages
+            if not word.startswith("$") and not word.endswith("%") and not bool(re.match(TIME_PATTERN, word)):
+                new_line.append(word)
+
+        parsed_lines.append(" ".join(new_line))
+
+    for line in parsed_lines:
+        
+        # parsed out any lines with less than or equal to 2 words
+        if len(line.split()) > 2:
+            clean_lines.append(line)
+    
+    return "\n".join(clean_lines)
+
+
+
+    """for line in no_duplicates:
+        parse = False
+
+        # invalid if any of the key words are in the line of text
+        for item in PARSE_LIST:
+            if item in line or item.capitalize() in line or item.upper() in line:
+                parse = True
+                break
+
+        # invalid if its a rating
+        if "out of" in line and "stars" in line:
+            parse = True
+
+        if line.isdigit() or line.isnumeric() or line.isdecimal():
+            parse = True
+        
+        for item in line.split():
+            # invalid if it shows something in time format
+            if bool(re.match(TIME_PATTERN, item)):
+                parse = True
+                break
+
+        if re.match(FORBIDDEN_NUMBERS, line):
+            parse = True
+        
+        if parse == False:
+            clean_lines.append(line)"""
+
+    #return "\n".join(no_duplicates)
+
+
+def numTokens(text_content):
+    num_tokens = 0
 
     for line in text_content.split("\n"):
-        new_lines.append(line.strip())
-
-    new_lines = list(set(new_lines))
-
-    return "\n".join(new_lines)
+        num_tokens += len(line)
+    
+    return num_tokens

@@ -196,7 +196,7 @@ def createKG(triplets_file):
     client = ArangoClient()
 
     # connect to IoT-KG database as root user
-    db = client.db("IoT-KG", username="root", password="Cleffa#173")
+    db = client.db("_system", username="root", password="Cleffa#173")
 
     # creates a new graph
     if not db.has_graph("IoT_KG"):
@@ -205,6 +205,9 @@ def createKG(triplets_file):
     else:
         graph = db.graph("IoT_KG")
         print("accessed existing graph")
+    
+    # drops all nodes and edges
+    drop_nodes_and_edges(graph)
 
     # creates vertex collection for device
     if not graph.has_vertex_collection("device"):
@@ -468,8 +471,8 @@ def createKG(triplets_file):
     plt.close()  # Close the plot to avoid display when running in a script    
 
     # Clean up the graph after processing
-    drop_nodes_and_edges(graph)
-    db.delete_graph(graph.name)
+    
+    #db.delete_graph(graph.name)
 
 
 if __name__ == "__main__":

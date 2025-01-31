@@ -1,7 +1,7 @@
 import sys
 sys.dont_write_bytecode = True
 from setup import client
-from scraping import scrape_website, preprocess
+from scraping import scrape_website, preprocess, numTokens
 from analysis.image_analysis import analyze_image_elements
 from analysis.text_analysis import analyze_text_elements
 from analysis.code_analysis import analyze_code_elements
@@ -17,7 +17,7 @@ AmazonModule = "Amazon"
 
 def main():
 
-    """triplets_list = []
+    triplets_list = []
 
     # makes a new url extractor
     url_extractor = ScrappingManager()
@@ -30,9 +30,9 @@ def main():
 
     print(URL_set)
 
-    URL_list = list(URL_set)[:5]"""
+    URL_list = list(URL_set)[:5]
 
-    URL_list = ["https://www.amazon.com/Govee-Changing-Dynamic-Bluetooth-Assistant/dp/B09B7NQT2K/ref=shss_Detail_from_B09B8V1LZ3_f_LIGHTING_to_B09B7NQT2K/147-0083935-6529626?pd_rd_w=epnts&content-id=amzn1.sym.3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_p=3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_r=54TVWMKHD7550ZERRWVY&pd_rd_wg=aN3po&pd_rd_r=055b1d6f-291d-4e43-8fe5-125446bc8ab8&pd_rd_i=B09B7NQT2K&psc=1"]
+    #URL_list = ["https://www.amazon.com/Govee-Changing-Dynamic-Bluetooth-Assistant/dp/B09B7NQT2K/ref=shss_Detail_from_B09B8V1LZ3_f_LIGHTING_to_B09B7NQT2K/147-0083935-6529626?pd_rd_w=epnts&content-id=amzn1.sym.3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_p=3965df22-b2a7-4de9-ac7b-82ff9bda5696&pf_rd_r=54TVWMKHD7550ZERRWVY&pd_rd_wg=aN3po&pd_rd_r=055b1d6f-291d-4e43-8fe5-125446bc8ab8&pd_rd_i=B09B7NQT2K&psc=1"]
 
     for url in URL_list:
         #url = 'https://web.dev/articles/video-and-source-tags'
@@ -45,7 +45,17 @@ def main():
         if text_content == "" and image_content == "" and code_content == "" and video_content == "":
             exit()
 
-        print(preprocess(text_content))
+        # preprocesses the text content
+        text_content = preprocess(text_content)
+
+        # writes the results of the preprocessed text in a text file
+        with open("preprocessed_text.txt", "w", encoding="utf-8") as f:
+            f.write(text_content)
+        
+        print(f"num tokens {numTokens(text_content)}")
+
+        
+        #exit()
 
         text_content = " ".join(text_content.split("\n"))
 
@@ -65,7 +75,7 @@ def main():
         print("Image Analysis:", image_result)
         print("=====================\n")
 
-        exit()
+        
 
         entities = f"""
             Text: {text_result}
@@ -84,8 +94,8 @@ def main():
 
         #triplets_list = []
 
-        for triplet in result_list:
-            triplets_list.append(str(triplet))
+        """for triplet in result_list:
+            triplets_list.append(str(triplet))"""
 
     with open("triplets.txt", "w") as file:
         for triplet in result_list:
