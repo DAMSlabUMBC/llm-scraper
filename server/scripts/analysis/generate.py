@@ -1,11 +1,11 @@
-from setup import client
+from setup import clientDS
 import re
 
 def generate(entities):
 
     # original prompt: Create a knowledge graph from all of the provided entities.
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
+    response = clientDS.chat.completions.create(
+        model="deepseek-chat",
         messages=[
             {"role": "system", "content": """
     You are a data engineer specialized in constructing knowledge graphs. You are given a content from text, images, video, and code. Generate a set of triplets in the format ((type1, entity1), relationship, (type2, entity2)) by following these steps:
@@ -47,13 +47,14 @@ def generate(entities):
     Do not include the word json in front of your result.
     If no triplets are found, return an empty list ([]).
 
-    Output: a set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
+    Output: a set of triplets (('type1', 'name1'), relationship, ('type2', 'name2')) in a list or an empty list.
     
-    DO NOT RETURN A JSON.
+    DO NOT RETURN THE WORD 'JSON' in the beginning of your response.
                                         """
             },
             {"role": "user", "content": entities}
-        ]
+        ],
+        stream=False
     )
     print("result", response.choices[0].message.content)
     return response.choices[0].message.content
