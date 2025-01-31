@@ -1,31 +1,43 @@
-from setup import client
+from setup import clientDS
 import spacy
+import transformers
 
 def analyze_text_elements(text_content):
 
     # Load English tokenizer, tagger, parser and NER
-    nlp = spacy.load("en_core_web_lg")
+    # nlp = spacy.load("en_core_web_lg")
     
-    doc = nlp(text_content)
+    # doc = nlp(text_content)
 
-    spaCy_content = ""
+    # spaCy_content = ""
 
-    # Find named entities, phrases and concepts
-    for entity in doc.ents:
-        # print(entity.text, entity.label_)
-        spaCy_content+= entity.text + " "
+    # # Find named entities, phrases and concepts
+    # for entity in doc.ents:
+    #     # print(entity.text, entity.label_)
+    #     spaCy_content+= entity.text + " "
 
-    combined_content = f"""
-        Text: {text_content}
-        spaCy: {spaCy_content}
-    """
+    # combined_content = f"""
+    #     Text: {text_content}
+    #     spaCy: {spaCy_content}
+    # """
 
-    print("Combined Content:", combined_content)
+    # print("Combined Content:", combined_content)
+    # chat_tokenizer_dir = "./"
+
+    # tokenizer = transformers.AutoTokenizer.from_pretrained( 
+    #         chat_tokenizer_dir, trust_remote_code=True
+    #         )
+
+    # result = tokenizer.encode("Hello!")
+    # print(result)
+    print(text_content)
+    print("Hit Text Analysis")
 
 
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
+
+    response = clientDS.chat.completions.create(
+        model="deepseek-chat",
         messages=[
             {"role": "system", "content": """
                                             You will receive an input of text and a list of entities created by spaCy (for example, named entities like organizations, people, products, locations, or any other spaCy-detected items).
@@ -49,11 +61,13 @@ Input: `There are no entities here.`
 Output: `{ "entities": [] }`
 
 Always follow this response format, but with a special focus on capturing IoT-related references (devices, manufacturers, sensors, applications, processes) if they appear.
-
+Do not output the word "json" in front of your output.
 
                             """
             },
-            {"role": "user", "content": combined_content}
-        ]
+            {"role": "user", "content": text_content}
+        ],
+        stream=False
     )
+    print(response)
     return response.choices[0].message.content
