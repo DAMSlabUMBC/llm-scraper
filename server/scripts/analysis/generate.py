@@ -1,11 +1,11 @@
-from setup import clientDS
+from setup import client
 import re
 
 def generate(entities):
 
     # original prompt: Create a knowledge graph from all of the provided entities.
-    response = clientDS.chat.completions.create(
-        model="deepseek-chat",
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": """
     You are a data engineer specialized in constructing knowledge graphs. You are given a content from text, images, video, and code. Generate a set of triplets in the format ((type1, entity1), relationship, (type2, entity2)) by following these steps:
@@ -53,10 +53,8 @@ def generate(entities):
                                         """
             },
             {"role": "user", "content": entities}
-        ],
-        stream=False
+        ]
     )
-    print("result", response.choices[0].message.content)
     return response.choices[0].message.content
 
 def parse_string_to_list(input_string):
