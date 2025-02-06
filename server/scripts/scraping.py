@@ -80,6 +80,8 @@ def scrape_website(url):
                 full_video_url = urljoin(url, src)
                 video_links.append(full_video_url)
                 video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
+    # Filter out any empty transcriptions and join the remaining ones into a single string.
+    video_content = " ".join([transcription for transcription in video_content if transcription.strip()])
 
     print('[💆‍♂️] Video Content Baby: ', video_content)
 

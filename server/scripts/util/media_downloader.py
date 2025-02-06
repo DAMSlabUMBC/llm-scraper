@@ -5,7 +5,7 @@ import whisper
 
 model = whisper.load_model("base")
 
-#https://www.ffmpeg.org/documentation.html
+# https://www.ffmpeg.org/documentation.html
 def ffmpeg_support(url, folder, media_type, index, extension="mp4"):
     output_filename = os.path.join(folder, f"{media_type}_{index}.{extension}")
     audio_filename = os.path.join(folder, f"{media_type}_{index}.mp3")
@@ -53,7 +53,11 @@ def ffmpeg_support(url, folder, media_type, index, extension="mp4"):
         print(f"[✅] Transcription saved to {transcription_file}")
 
         return transcription_text
+
     except subprocess.CalledProcessError as e:
         print(f"[🛑] FFmpeg failed {media_type}: {e}")
     except Exception as e:
         print(f"[🛑] Failed {media_type} URL with FFmpeg: {e}")
+
+    # Return an empty string on error to avoid returning None.
+    return ""
