@@ -3,11 +3,8 @@ sys.dont_write_bytecode = True
 from setup import client
 from scraping import scrape_website, preprocess, numTokens
 from analysis.image_analysis import analyze_image_elements
-from analysis.text_analysis import analyze_text_elements
-from analysis.code_analysis import analyze_code_elements
-from analysis.audio_analysis import analyze_audio_elements
-from analysis.video_analysis import analyze_video_elements
-from analysis.generate import generate, parse_string_to_list
+from analysis.entity_analysis import analyze_text_elements
+from analysis.relationship_analysis import generate, parse_string_to_list
 from agents.model import response
 from KG import createKG
 from url_extraction.scrapping_manager import ScrappingManager
@@ -63,10 +60,15 @@ def main():
             f.write(text_content)"""
         #print(text_content)
 
-        text_result = analyze_text_elements(text_content)
-        video_result = analyze_video_elements(video_content)
-        code_result = analyze_code_elements(code_content)
-        image_result = analyze_image_elements(image_content)
+    print("✅ Text Result: ", text_content)
+    text_result = analyze_text_elements(text_content)
+    print("✅ Video Result: ", text_content)
+    video_result = analyze_text_elements(video_content)
+    print("✅ Code Result: ", text_content)
+    code_result = analyze_text_elements(code_content)
+    print("✅ Image Result: ", text_content)
+
+    image_result = analyze_text_elements(analyze_image_elements(image_content))
 
         print("\n=== Analysis Results ===")
         print("Text Analysis:", text_result)
