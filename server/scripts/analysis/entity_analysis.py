@@ -114,8 +114,6 @@ def analyze_text_elements(text_content):
                 Example 3:
                 Input: `There are no entities here.`
                 Output: `{ "entities": [] }`
-
-
             """
             },
             {"role": "user", "content": text_content}

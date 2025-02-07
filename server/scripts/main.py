@@ -60,15 +60,10 @@ def main():
             f.write(text_content)"""
         #print(text_content)
 
-    print("✅ Text Result: ", text_content)
-    text_result = analyze_text_elements(text_content)
-    print("✅ Video Result: ", text_content)
-    video_result = analyze_text_elements(video_content)
-    print("✅ Code Result: ", text_content)
-    code_result = analyze_text_elements(code_content)
-    print("✅ Image Result: ", text_content)
-
-    image_result = analyze_text_elements(analyze_image_elements(image_content))
+        text_result = analyze_text_elements(text_content)
+        video_result = analyze_text_elements(video_content)
+        code_result = analyze_text_elements(code_content)
+        image_result = analyze_text_elements(analyze_image_elements(image_content))
 
         print("\n=== Analysis Results ===")
         print("Text Analysis:", text_result)
@@ -96,11 +91,11 @@ def main():
 
         #triplets_list = []
 
-        """for triplet in result_list:
-            triplets_list.append(str(triplet))"""
+        for triplet in result_list:
+            triplets_list.append(str(triplet))
 
     with open("triplets.txt", "w") as file:
-        for triplet in result_list:
+        for triplet in triplets_list:
             file.writelines(str(triplet))
             file.write("\n")
             

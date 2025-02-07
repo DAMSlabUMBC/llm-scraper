@@ -115,7 +115,7 @@ def generate(entities):
                 ]'
 
                 
-                DO NOT RETURN THE WORD 'JSON' in the beginning of your response.
+                DO NOT RETURN THE WORD 'JSON' or any other word in the beginning of your response, stricly output the relationships you've created similar to the example output.
             """
             },
             {"role": "user", "content": entities}
