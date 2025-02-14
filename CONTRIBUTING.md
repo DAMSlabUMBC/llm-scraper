@@ -3,6 +3,12 @@ Fork and Clone the Repo! 🤗
 
 Follow: https://docs.github.com/en/get-started/quickstart/fork-a-repo
 
+### Prerequisite
+
+1. Docker [[Download]](https://www.docker.com/get-started/)
+2. ChromeDriver [[Download]](https://developer.chrome.com/docs/chromedriver/downloads) [[Video]](https://www.youtube.com/watch?v=WnWQgUerR0c)
+3. ArrangoDB [Download](https://arangodb.com/download/)
+
 ## Local Setup Instructions
 
 ### 1. Navigate to the `server` directory
@@ -16,6 +22,11 @@ Create a virtual environment named `env` to manage dependencies.
 ```bash
 python3 -m venv env
 ```
+or
+```bash
+python -m venv env
+```
+
 
 ### 3. Activate the virtual environment
 Activate the environment to start using it.
@@ -45,12 +56,18 @@ CHROME_PATH=your_chrome_extension_path_here
 ```
 
 Replace `your_openai_api_key_here` with your actual OpenAI API key.
+Replace `your_chrome_extension_path_here` with your actual OpenAI API key.
 
-### 6. Run the scraper
-Run the `scraper.py` script to start the web scraper.
+### 6. Navigate to the `scripts` directory
+```bash
+cd scripts
+```
+
+### 5. Run the scraper
+Run the `main.py` script to start the web scraper.
 
 ```bash
-python scraper.py
+python main.py
 ```
 
 ### 7. Select the correct Python interpreter (for Visual Studio Code users)
