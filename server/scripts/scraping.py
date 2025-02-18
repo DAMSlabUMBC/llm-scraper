@@ -7,11 +7,19 @@ from util.folder_manager import create_folder
 from util.content_saver import save_content, save_links
 from util.media_downloader import ffmpeg_support
 import json
+import re
+import cloudscraper
+from errors import ScrappingError
+
+#PARSE_LIST = ["$", "rating", "review", "recommendation", "deliver", "%", "quantity", "star", "ship", "return"]
+TIME_PATTERN = r"^(?:[0-9]|[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$"
+FORBIDDEN_NUMBERS = r"^\d+(\.\d+)?\+?$"
+PRICE_PATTERN = r'[\$\€\£\₹]?\s?\d{1,3}(?:,\d{3})*(?:\.\d{2})?'
 
 def scrape_website(url):
 
     # Selenium WebDriver Configuration
-    options = Options()
+    """options = Options()
     options.headless = True
     fake_useragent = UserAgent()
     options.add_argument(f'user-agent={fake_useragent.random}')
@@ -20,14 +28,26 @@ def scrape_website(url):
     options.add_argument("--disable-dev-shm-usage")  # Overcome resource limitations
         
     driver = webdriver.Chrome(options=options)
-    driver.get(url)
-    html = driver.page_source
+    driver.get(url)"""
+    
+    # Create a cloudscraper instance
+    scraper = cloudscraper.create_scraper()
+
+    # Fetch the webpage content
+    response = scraper.get(url)
+    if response.status_code != 200:
+        raise ScrapingError(f"Unable to scrape {url} - Status Code: {response.status_code}")
+        #print(f"[❌] Failed to fetch {url}, Status Code: {response.status_code}")
+        #return None, None, None, None
+
+    html = response.text
+    soup = BeautifulSoup(html, 'html.parser')
 
     # Parse the HTML code with Beautiful Soup
-    soup = BeautifulSoup(html, 'html.parser')
+    #soup = BeautifulSoup(html, 'html.parser')
     
     # Create a dynamic folder based on the URL's hostname
-    subfolder = create_folder(driver)
+    subfolder = create_folder(response)
     
     # Extract and join the text content
     print('[✅] Extracting Text')
@@ -76,3 +96,44 @@ def scrape_website(url):
     print('[💆‍♂️] Video Content Baby: ', video_content)
 
     return text_content, image_content, code_content, video_content
+
+def preprocess(text_content):
+    parsed_lines = []
+    clean_lines = []
+    no_duplicates = []
+
+    # removing the duplicates
+    for line in text_content.split("\n"):
+        no_duplicates.append(line.strip())
+
+    no_duplicates = list(set(no_duplicates))
+
+    for line in no_duplicates:
+        new_line = []
+        for word in line.split():
+
+            """if not bool(re.match(PRICE_PATTERN, word)):
+                new_line.append(word)"""
+
+            # removes prices and percentages
+            if not word.startswith("$") and not word.endswith("%") and not bool(re.match(TIME_PATTERN, word)):
+                new_line.append(word)
+
+        parsed_lines.append(" ".join(new_line))
+
+    for line in parsed_lines:
+        
+        # parsed out any lines with less than or equal to 2 words
+        if len(line.split()) > 2:
+            clean_lines.append(line)
+    
+    return "\n".join(clean_lines)
+
+
+def numTokens(text_content):
+    num_tokens = 0
+
+    for line in text_content.split("\n"):
+        num_tokens += len(line)
+    
+    return num_tokens

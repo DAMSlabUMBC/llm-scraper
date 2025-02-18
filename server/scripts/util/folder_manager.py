@@ -16,7 +16,8 @@ def create_folder(driver):
 
 def extract_product_name(driver):
     try:
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        #soup = BeautifulSoup(driver.page_source, 'html.parser')
+        soup = BeautifulSoup(driver.text, 'html.parser')
         # grabing the h1
         product_name = soup.find('h1')
         if product_name:
