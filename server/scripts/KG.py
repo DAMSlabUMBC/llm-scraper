@@ -1,6 +1,6 @@
 from arango import ArangoClient
-import networkx as nx
-import matplotlib.pyplot as plt
+from tqdm import tqdm
+import re
 
 # ALL NODE TYPES
 device = None
@@ -33,8 +33,15 @@ follows = None
 
 graph = None
 
-nodeColors = {"device": "red", "manufacturer": "blue", "application": "green", "process": "yellow", "sensor": "cyan", "observation": "magenta",
-              "inference": "gray", "research": "orange", "privacyPolicy": "purple", "regulation": "pink"}
+
+
+triplet_files = ["triplets.txt", "triplets1.txt", "triplets2.txt", "triplets3.txt", "triplets4.txt"]
+
+def removeForbiddenChar(nodeKey):
+
+    newKey = re.sub(r'[^a-zA-Z0-9_-]', '_', nodeKey)
+
+    return newKey
 
 def get_triplets(filename):
     lines = []
@@ -43,8 +50,8 @@ def get_triplets(filename):
     with open(filename, "r") as file:
         lines = file.readlines()
         
-    print("ALL TRIPLETS")
-    for line in lines:
+    #print("ALL TRIPLETS")
+    for line in tqdm(lines):
         triplet = eval(line.strip())
         triplets.append(triplet)
 
@@ -56,6 +63,8 @@ def insertNode(node, allNodeTypes, graph):
 
     # generates a key for the node
     nodeKey = "".join(node[1].split())
+
+    nodeKey = removeForbiddenChar(nodeKey)
     #print("device", device)
 
     # checks if the node is of a valid type
@@ -74,6 +83,9 @@ def makeEdge(fromNode, toNode, relationship, graph):
     toNodeType = toNode[0]
     fromNodeKey = "".join(fromNode[1].split())
     toNodeKey = "".join(toNode[1].split())
+
+    fromNodeKey = removeForbiddenChar(fromNodeKey)
+    toNodeKey = removeForbiddenChar(toNodeKey)
 
     fromCollection = graph.vertex_collection(fromNodeType)
     toCollection = graph.vertex_collection(toNodeType)
@@ -191,12 +203,14 @@ def drop_nodes_and_edges(graph):
         graph.delete_vertex_collection("regulation", purge=True)
     pass
 
-def createKG(triplets_file):
+def createKG():
+    triplets = []
+
     # Initialize the client for ArangoDB.
     client = ArangoClient()
 
     # connect to IoT-KG database as root user
-    db = client.db("IoT-KG", username="root", password="Cleffa#173")
+    db = client.db("_system", username="root", password="Cleffa#173")
 
     # creates a new graph
     if not db.has_graph("IoT_KG"):
@@ -205,6 +219,9 @@ def createKG(triplets_file):
     else:
         graph = db.graph("IoT_KG")
         print("accessed existing graph")
+    
+    # drops all nodes and edges
+    drop_nodes_and_edges(graph)
 
     # creates vertex collection for device
     if not graph.has_vertex_collection("device"):
@@ -265,10 +282,6 @@ def createKG(triplets_file):
         regulation = graph.create_vertex_collection("regulation")
     else:
         regulation = graph.vertex_collection("regulation")
-
-    """print("ALL NODE COLLECTIONS")
-    for collection in graph.vertex_collections():
-        print(collection)"""
 
     # creates edge collection for developedBy
     if not graph.has_edge_definition("developedBy"):
@@ -425,13 +438,15 @@ def createKG(triplets_file):
                     "inference": inference, "research": research, "privacyPolicy": privacyPolicy, "regulation": regulation}
 
 
-    triplets = get_triplets(triplets_file)
+    for triplet_file in triplet_files:
 
-    G = nx.Graph()
+        triplets.extend(get_triplets(triplet_file))
+
+    triplets = set(triplets)
 
     # Process triplets here
-    for triplet in triplets:
-        print("triplet", triplet)
+    for triplet in tqdm(triplets):
+        #print("triplet", triplet)
         fromNode = triplet[0]
         relationship = triplet[1]
         toNode = triplet[2]
@@ -445,32 +460,5 @@ def createKG(triplets_file):
         # makes an edge between the from and to nodes
         makeEdge(fromNode, toNode, relationship, graph)
 
-        # adds nodes to the visual graph
-        G.add_node(fromNode[1], type=fromNode[0])
-        G.add_node(toNode[1], type=toNode[0])
-
-        # adds the edge to the visual graph
-        G.add_edge(fromNode[1], toNode[1], relationship=relationship)
-
-    # configures the node colors per type
-    node_colors = [nodeColors[G.nodes[node]['type']] for node in G.nodes]
-
-    pos = nx.spring_layout(G)
-
-    edge_labels = nx.get_edge_attributes(G, "relationship")
-
-    # Visualize the graph and save it as a PNG file
-    plt.figure(figsize=(8, 6))  # Optional: Adjust figure size if needed
-    nx.draw(G, pos, node_color=node_colors, with_labels=True)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    print(list(G.nodes(data=True)))
-    plt.savefig("graph.png", format="PNG")  # Save as PNG
-    plt.close()  # Close the plot to avoid display when running in a script    
-
-    # Clean up the graph after processing
-    drop_nodes_and_edges(graph)
-    db.delete_graph(graph.name)
-
-
 if __name__ == "__main__":
-    createKG("triplets3.txt")
+    createKG()
