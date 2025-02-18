@@ -2,10 +2,15 @@ import requests
 import os
 import ast
 from dotenv import load_dotenv
-from fuzzywuzzy import fuzz
+import torch
+from sentence_transformers import SentenceTransformer, util
 
 # Load environment variables
 load_dotenv()
+
+# Load a pretrained Sentence Transformer model
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = SentenceTransformer("all-MiniLM-L6-v2").to(device)
 
 def get_triplets(filename):
 
@@ -45,7 +50,7 @@ def build_payload(query, **params):
         'key': os.getenv('GOOGLE_SEARCH_API_KEY'),
         'cx': os.getenv('SEARCH_ENGINE_ID'),
         'q': query,
-        'num': 5,
+        'num': 2,
     }
     payload.update(params)
     return payload
@@ -69,6 +74,21 @@ def make_request(payload):
         print("Error parsing JSON response:", e)
         return {}
 
+
+def compute_semantic_similarity(query, snippet):
+    """
+    Computes the semantic similarity between the query and the snippet using SBERT embeddings.
+
+    :param query: Query string.
+    :param snippet: Search result snippet.
+    :return: Cosine similarity score (0 to 100%).
+    """
+    query_embedding = model.encode(query, convert_to_tensor=True)
+    snippet_embedding = model.encode(snippet, convert_to_tensor=True)
+
+    cosine_score = util.pytorch_cos_sim(query_embedding, snippet_embedding).item()
+    return round(cosine_score * 100, 2)
+
 def search_validation():
     """
     Function to validate triplets by querying Google and comparing search results.
@@ -89,8 +109,8 @@ def search_validation():
                 snippet = result.get("snippet", "No snippet found")
                 link = result.get("link", "No link found")
 
-                # Use Fuzzy Matching to compare the snippet with our query
-                similarity_score = fuzz.ratio(query.lower(), snippet.lower())
+                # Compute SBERT-based semantic similarity
+                similarity_score = compute_semantic_similarity(query, snippet)
 
                 print(f"\n🔥**URL: ** {query}" )
                 print(f"📌 **Title:** {title}")
