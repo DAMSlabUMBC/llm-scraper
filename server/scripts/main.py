@@ -4,6 +4,7 @@ from setup import client
 from scraping import scrape_website, preprocess, numTokens
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements
+from analysis.merge_duplicates import merge_duplicates
 from analysis.relationship_analysis import generate, parse_string_to_list
 from agents.model import response
 from KG import createKG
@@ -82,6 +83,8 @@ def main():
         """
         print("Entities:",entities)
         generate_result = generate(entities)
+        print('Before Merging Duplicates: ', generate_result)
+        generate_result = merge_duplicates(generate_result)
 
         print('[😻] Final Response: ', generate_result)
 
