@@ -5,11 +5,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 
 # Shared variable for working proxy
 working_proxy = None
 lock = threading.Lock()
 PROXIES = []
+fake_useragent = UserAgent()
 
 def download_proxy():
     """Fetches free HTTP proxies and saves them to a file."""
@@ -72,17 +74,59 @@ def find_working_proxy():
 
     return working_proxy
 
+def local_access(url):
+    print("[🌐] Checking URL without proxy")
+    try:
+        headers = {"User-Agent": fake_useragent.random}
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            page_text = response.text.lower()
+            if "captcha" in page_text or "verification" in page_text or "verify you are human" in page_text:
+                print("[🤖] Bot Protected")
+                return False
+        elif response.status_code == 403:
+            print("[❌] Local access forbidden (403).")
+            return False
+        elif response.status_code == 503:
+            print("[❌] Local access unavailable (503).")
+            return False
+        elif response.status_code == 429:
+            print("[❌] Local access rate limited (429).")
+            return False
+        elif response.status_code == 404:
+            print("[❌] Local access not found (404).")
+            return False
+        else:
+            print(f"[❌] Local access failed with status code: {response.status_code}")
+            return False
+        
+    except requests.RequestException as e:
+        print(f"[❌] Error during local access: {e}")
+        return False
+    
 def scrape_website(url):
     """Scrapes a website using a working proxy."""
-    global working_proxy
+    global working_proxy    
 
-    # Load proxies and find a working one
-    load_proxies()
-    proxy = find_working_proxy()
+    ## Load proxies and find a working one
+    #load_proxies()
+    #proxy = find_working_proxy()
+    #
+    #if not proxy:
+    #    print("[❌] No working proxy found.")
+    #    return None
     
-    if not proxy:
-        print("[❌] No working proxy found.")
+    # Check local access first
+    if local_access(url):
+        print("[✅] Local access successful.")
         return None
+    else:
+        load_proxies()
+        proxy = find_working_proxy()
+        
+        if not proxy:
+            print("[❌] No working proxy found.")
+            return None
 
     # Configure Selenium with the working proxy
     options = Options()
