@@ -1,6 +1,11 @@
+import os
+from dotenv import load_dotenv
 from arango import ArangoClient
 import networkx as nx
 import matplotlib.pyplot as plt
+
+# Load environment variables
+load_dotenv()
 
 # ALL NODE TYPES
 device = None
@@ -193,10 +198,10 @@ def drop_nodes_and_edges(graph):
 
 def createKG(triplets_file):
     # Initialize the client for ArangoDB.
-    client = ArangoClient()
+    client = ArangoClient(hosts=os.getenv('HOST_URL'))
 
     # connect to IoT-KG database as root user
-    db = client.db("_system", username="root", password="Cleffa#173")
+    db = client.db("_system", username=os.getenv('ARRANGODB_USERNAME'), password=os.getenv('ARRANGODB_PASSWORD'))
 
     # creates a new graph
     if not db.has_graph("IoT_KG"):
