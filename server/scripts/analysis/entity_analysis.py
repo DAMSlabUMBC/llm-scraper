@@ -22,7 +22,7 @@ def analyze_text_elements(text_content):
     # """
 
     response = client.chat(
-        model='llama3', 
+        model='deepseek-r1', 
         messages=[
             {
                 'role': 'system',

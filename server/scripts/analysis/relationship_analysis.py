@@ -4,7 +4,7 @@ import re
 def generate(entities):
 
     response = client.chat(
-        model='llama3', 
+        model='deepseek-r1', 
         messages=[
             {
                 'role': 'system',
