@@ -137,7 +137,7 @@ def local_access(url):
             #if "captcha" in page_text or "verification" in page_text or "verify you are human" in page_text:
             #    print("[🤖] Bot Protected")
             #    return False
-            return False
+            return True
         
         status_code = {
             403: "forbidden",
