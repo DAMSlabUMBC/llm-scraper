@@ -5,12 +5,71 @@ from dotenv import load_dotenv
 import torch
 from sentence_transformers import SentenceTransformer, util
 
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from fake_useragent import UserAgent
+
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import threading
+from urllib.parse import urlparse
+import time
 # Load environment variables
 load_dotenv()
 
 # Load a pretrained Sentence Transformer model
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = SentenceTransformer("all-MiniLM-L6-v2").to(device)
+
+def use_selenium():
+
+    excluded_domains = {
+        "www.google.com",
+        "accounts.google.com",
+        "support.google.com",
+        "policies.google.com",
+        "search.app.goo.gl",
+        "maps.google.com",
+    }
+    
+    excluded_paths = {
+        "/search",
+        "/advanced_search",
+        "/ServiceLogin",
+    }
+
+    options = Options()
+    options.headless = True
+    fake_useragent = UserAgent()
+    options.binary_location = os.getenv('CHROME_PATH')
+    options.add_argument(f'user-agent={fake_useragent.random}')
+    options.add_argument('--disable-blink-features=AutomationControlled') 
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+        
+    driver = webdriver.Chrome(options=options)
+    driver.get('https://www.google.com')
+    wait = WebDriverWait(driver, 10)
+
+    search = driver.find_element("name", "q")
+    search.send_keys("what is the best LLM to use")
+    search.send_keys(Keys.RETURN)
+    anchor_elements = wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))
+    for element in anchor_elements:
+        href = element.get_attribute("href")
+        if href is None:
+            continue
+        parsed = urlparse(href)
+        domain = parsed.netloc
+        path = parsed.path
+        if domain not in excluded_domains and path not in excluded_paths:
+            print(href)
+
+    time.sleep(5000)
+    # driver.quit()
 
 def get_triplets(filename):
 
@@ -38,6 +97,7 @@ def format_triplet(triplet):
     """
     subject, predicate, obj = triplet
     return f"{subject[1]} {predicate} {obj[1]}" 
+
 def build_payload(query, **params):
     """
     Function to build the payload for the Google Search API Request
@@ -73,7 +133,6 @@ def make_request(payload):
     except Exception as e:
         print("Error parsing JSON response:", e)
         return {}
-
 
 def compute_semantic_similarity(query, snippet):
     """
@@ -123,4 +182,4 @@ def search_validation():
             print(f"⚠️ No results found for: {query}")
 
 if __name__ == "__main__":
-    search_validation()
+    use_selenium()
