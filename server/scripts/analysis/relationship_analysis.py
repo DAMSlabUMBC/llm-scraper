@@ -1,10 +1,17 @@
 from setup import client
 import re
+import ollama
+import torch
 
 def generate(entities):
+    
+    client = ollama.Client()
+    
+    # empties the cache
+    torch.cuda.empty_cache()
 
     response = client.chat(
-        model='deepseek-r1', 
+        model='deepseek-r1:70b', 
         messages=[
             {
                 'role': 'system',
@@ -126,7 +133,7 @@ def generate(entities):
         ],
         stream=False
     )
-    return response.message.content
+    return remove_think_tags(response.message.content)
 
 def parse_string_to_list(input_string):
     # Step 1: Remove unnecessary whitespace and normalize the input string
@@ -152,3 +159,17 @@ def parse_string_to_list(input_string):
     ]
     
     return result
+
+def remove_think_tags(text):
+#     """Removes <think>...</think> sections from DeepSeek output."""
+#     return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+
+    # Remove all occurrences of <think>...</think>
+    cleaned_text1 = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+    cleaned_text2 = re.sub(r'<think>:.*?</think>', '', text, flags=re.DOTALL).strip()
+    
+    if len(cleaned_text1) < len(cleaned_text2):
+        return cleaned_text1
+    else:
+        return cleaned_text2
+    #return cleaned_text.strip()

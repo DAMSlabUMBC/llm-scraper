@@ -98,3 +98,48 @@ class Amazon():
         driver.close()
         
         return product_urls
+    
+    def parseProducts(self, soup):
+        """
+        parses a product from Amazon
+
+        Parameters
+        soup: html code to parse
+
+        Return
+        self.process_record(product): dictionary of product information
+        """
+        name = soup.find("span", {"class": "a-size-large product-title-word-break"})
+        if name != None:
+            name = name.get_text(strip=True)
+            
+        #class="a-normal a-spacing-micro"
+        
+        manufacturer = soup.find("div", {"class": "a-section a-spacing-small a-spacing-top-small"})
+        if manufacturer != None:
+            manufacturer = soup.find("table", {"class": "a-normal a-spacing-micro"})
+            if manufacturer != None:
+                manufacturer = manufacturer.find("tr", {"class": "a-spacing-small po-brand"})
+                if manufacturer != None:
+                    manufacturer = manufacturer.find("td", {"class": "a-span9"})
+                    if manufacturer != None:
+                        manufacturer = manufacturer.find("span", {"class": "a-size-base po-break-word"})
+                        if manufacturer != None:
+                            manufacturer = manufacturer.get_text(strip=True)
+
+        details_elements = soup.select('.a-unordered-list.a-vertical.a-spacing-mini')
+        details = ' | '.join([elem.get_text(strip=True) for elem in details_elements])
+
+        # finds the url to the product
+        url = soup.find("link", {"rel": "canonical"})
+        if url != None:
+            url = url["href"]
+    
+        # turns it into a product of the necessary format
+        product = {
+            "name": name,
+            "manufacturer": manufacturer,
+            "details": details
+        }
+        
+        return str(product)
