@@ -124,31 +124,67 @@ def compute_semantic_similarity(query, text):
     cosine_score = util.pytorch_cos_sim(query_embedding, text_embedding).item()
     return round(cosine_score * 100, 2)
 
+
+def get_total_urls(query):
+
+    options = Options()
+    options.headless = True
+    fake_useragent = UserAgent()
+    options.binary_location = os.getenv('CHROME_PATH')
+    options.add_argument(f'user-agent={fake_useragent.random}')
+    options.add_argument('--disable-blink-features=AutomationControlled') 
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+        
+    driver = webdriver.Chrome(options=options)
+    driver.get('https://www.google.com')
+    wait = WebDriverWait(driver, 30)
+
+    search = driver.find_element("name", "q")
+    search.send_keys(query)
+    search.send_keys(Keys.RETURN)
+
+    try:
+        totalUrls = wait.until(EC.presence_of_element_located((By.ID, "result-stats")))
+        
+        total_html = totalUrls.get_attribute('outerHTML')
+        print("Extracted HTML:", total_html)
+
+    
+    except Exception as e:
+        print("Error: result-stats not found or empty.", e)
+    driver.quit()
+
+    return 1
+
 def main():
 
     triplets = get_triplets("triplets.txt")
 
-    for triplet in triplets[:3]:
+    for triplet in triplets[:5]:
         query = format_triplet(triplet)
-        urls = get_urls(query)
+        urls = get_total_urls(query)
 
-        print(f"\n🔍 **Query:** {query}")
+        print("Final extracted result-stats:", urls)
+        # Instead of get urls, we want to get the number of pages 
 
-        for url in urls:
+        # print(f"\n🔍 **Query:** {query}")
 
-            # Text content from url
-            page = requests.get(url)
-            soup = BeautifulSoup(page.content, 'html.parser')
-            text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
-            text_content = '\n'.join([elem.get_text() for elem in text_elements])
+        # for url in urls:
 
-            # Compute SBERT-based semantic similarity
-            similarity_score = compute_semantic_similarity(query, text_content)
+        #     # Text content from url
+        #     page = requests.get(url)
+        #     soup = BeautifulSoup(page.content, 'html.parser')
+        #     text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
+        #     text_content = '\n'.join([elem.get_text() for elem in text_elements])
 
-            print(f"\n🔎 Query: {query}" )
-            print(f"🔗 URL: {url}")
-            print(f"📊 Relevance Score: {similarity_score}%")
-            print("-" * 60)
+        #     # Compute SBERT-based semantic similarity
+        #     similarity_score = compute_semantic_similarity(query, text_content)
+
+        #     print(f"\n🔎 Query: {query}" )
+        #     print(f"🔗 URL: {url}")
+        #     print(f"📊 Relevance Score: {similarity_score}%")
+        #     print("-" * 60)
 
 if __name__ == "__main__":
     main()
