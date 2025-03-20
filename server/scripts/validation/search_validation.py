@@ -17,79 +17,16 @@ from selenium.webdriver.common.by import By
 import threading
 from urllib.parse import urlparse
 import time
+import re
 
 # Load environment variables
 load_dotenv()
 
-# Load a pretrained Sentence Transformer model
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model = SentenceTransformer("all-mpnet-base-v2").to(device)
-
-def get_urls(query):
-
-    result = []
-    seen = set()
-
-    excluded_domains = {
-        "www.google.com",
-        "accounts.google.com",
-        "support.google.com",
-        "policies.google.com",
-        "search.app.goo.gl",
-        "maps.google.com",
-    }
-    
-    excluded_paths = {
-        "/search",
-        "/advanced_search",
-        "/ServiceLogin",
-    }
-
-    options = Options()
-    options.headless = True
-    fake_useragent = UserAgent()
-    options.binary_location = os.getenv('CHROME_PATH')
-    options.add_argument(f'user-agent={fake_useragent.random}')
-    options.add_argument('--disable-blink-features=AutomationControlled') 
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-        
-    driver = webdriver.Chrome(options=options)
-    driver.get('https://www.google.com')
-    wait = WebDriverWait(driver, 10)
-
-    search = driver.find_element("name", "q")
-    search.send_keys(query)
-    search.send_keys(Keys.RETURN)
-    anchor_elements = wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))
-    count = 0
-    for element in anchor_elements:
-        if count >= 5:
-            break
-        href = element.get_attribute("href")
-        if href is None:
-            continue
-        parsed = urlparse(href)
-        domain = parsed.netloc
-        path = parsed.path
-        if domain not in excluded_domains and path not in excluded_paths:
-            if href not in seen:
-                print(href)
-                result.append(href)
-                seen.add(href)
-                count += 1
-
-    time.sleep(5)
-    driver.quit()
-    return result
 
 def get_triplets(filename):
 
     """
     Function to grab the triplets from the file
-
-    :param filename: Text file containing triplets
-    :return: Triplets from each line
     """
     with open(filename, "r", encoding="utf-8") as file:
         try:
@@ -108,25 +45,118 @@ def format_triplet(triplet):
     → "Govee Smart LED Light Bars performs location tracking"
     """
     subject, predicate, obj = triplet
-    return f"{subject[1]} {predicate} {obj[1]}" 
+    if predicate == 'developedBy':
+        predicate = 'is developed by'
+        return f"{subject[1]} {predicate} {obj[1]}"
+    elif predicate == 'manufacturedBy':
+        predicate = 'manufactures'
+        return f"{obj[1]} {predicate} {subject[1]}"
+    elif predicate == 'compatibleWith':
+        predicate = 'is compatible with'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasSensor':
+        predicate = 'has'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'accessSensor':
+        predicate = "can access"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'requiresSensor':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'performs':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasPolicy':
+        predicate = 'has policy'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'statesInPolicy':
+        predicate = 'states that there is'
+        return f"{obj[1]} {predicate} {subject[1]}" 
+    elif predicate == 'captures':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'canInfer':
+        predicate = 'can infer'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'showInference':
+        predicate = 'show inference'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'references':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasTopic':
+        predicate = "has topic"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'follows':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    else:
+        print("Error in search validation: Invalid relationship.")
+    
+    return "" 
 
-def compute_semantic_similarity(query, text):
+def format_opposing_triplet(triplet):
     """
-    Computes the semantic similarity between the query and the snippet using SBERT embeddings.
+    Converts a structured triplet into a opposing human-readable query.
+    The opposing search is based on the relationship and will switch the 
+    entities to make an opposing search.
 
-    :param query: Query string.
-    :param snippet: Search result snippet.
-    :return: Cosine similarity score (0 to 100%).
+    Example:
+    ('device', 'Govee Smart LED Light Bars') performs ('process', 'location tracking')
+    → "Govee Smart LED Light Bars DOES NOT perform location tracking"
     """
-    query_embedding = model.encode(query, convert_to_tensor=True)
-    text_embedding = model.encode(text, convert_to_tensor=True)
+    subject, predicate, obj = triplet
 
-    cosine_score = util.pytorch_cos_sim(query_embedding, text_embedding).item()
-    return round(cosine_score * 100, 2)
+    if predicate == 'developedBy':
+        predicate = 'is not developed by'
+        return f"{subject[1]} {predicate} {obj[1]}"
+    elif predicate == 'manufacturedBy':
+        predicate = 'is not manufactured by'
+        return f"{obj[1]} {predicate} {subject[1]}"
+    elif predicate == 'compatibleWith':
+        predicate = 'is not compatible with'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasSensor':
+        predicate = 'does not have'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'accessSensor':
+        predicate = "can not access"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'requiresSensor':
+        predicate = "does not require"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'performs':
+        predicate = "does not perfor,m"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasPolicy':
+        predicate = 'does not jave policy'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'statesInPolicy':
+        predicate = 'does not state that there is'
+        return f"{obj[1]} {predicate} {subject[1]}" 
+    elif predicate == 'captures':
+        predicate = "does not capture"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'canInfer':
+        predicate = 'can not infer'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'showInference':
+        predicate = 'does not show inference'
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'references':
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'hasTopic':
+        predicate = "does not have topic"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    elif predicate == 'follows':
+        predicate = "does not follow"
+        return f"{subject[1]} {predicate} {obj[1]}" 
+    else:
+        print("Error in search validation: Invalid relationship.")
+    
+    return ""
 
-
-def get_total_urls(query):
-
+def get_total_search_results(query):
+    """
+    Uses selenium to search for the query and grabs the 'result-stats' id tag that
+    Google uses to provide an approximate number of search results
+    """
+    
     options = Options()
     options.headless = True
     fake_useragent = UserAgent()
@@ -148,43 +178,43 @@ def get_total_urls(query):
         totalUrls = wait.until(EC.presence_of_element_located((By.ID, "result-stats")))
         
         total_html = totalUrls.get_attribute('outerHTML')
-        print("Extracted HTML:", total_html)
+        match = re.search(r'About\s+([\d,]+)\s+results', total_html)
+        if match:
+            number = int(match.group(1).replace(',', ''))
+        else:
+            number = -1
+
+        return number
 
     
     except Exception as e:
         print("Error: result-stats not found or empty.", e)
     driver.quit()
-
-    return 1
+    return -1
 
 def main():
 
     triplets = get_triplets("triplets.txt")
 
-    for triplet in triplets[:5]:
+    for triplet in triplets[:2]:
         query = format_triplet(triplet)
-        urls = get_total_urls(query)
+        opposingQuery = format_opposing_triplet(triplet)
 
-        print("Final extracted result-stats:", urls)
-        # Instead of get urls, we want to get the number of pages 
+        normalResults = -1        
+        while(normalResults < 0):
+            normalResults = get_total_search_results(query)
 
-        # print(f"\n🔍 **Query:** {query}")
+        opposingResults = -1
+        while(opposingResults < 0):
+            opposingResults = get_total_search_results(opposingQuery)
 
-        # for url in urls:
+        print(query)
+        print(opposingQuery)
+        print(normalResults)
+        print(opposingResults)
 
-        #     # Text content from url
-        #     page = requests.get(url)
-        #     soup = BeautifulSoup(page.content, 'html.parser')
-        #     text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
-        #     text_content = '\n'.join([elem.get_text() for elem in text_elements])
-
-        #     # Compute SBERT-based semantic similarity
-        #     similarity_score = compute_semantic_similarity(query, text_content)
-
-        #     print(f"\n🔎 Query: {query}" )
-        #     print(f"🔗 URL: {url}")
-        #     print(f"📊 Relevance Score: {similarity_score}%")
-        #     print("-" * 60)
+        weight = (normalResults + opposingResults) / 2
+        print(weight)
 
 if __name__ == "__main__":
     main()
