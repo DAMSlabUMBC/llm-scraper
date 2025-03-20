@@ -1,6 +1,11 @@
+import os
+from dotenv import load_dotenv
 from arango import ArangoClient
 from tqdm import tqdm
 import re
+
+# Load environment variables
+load_dotenv()
 
 # ALL NODE TYPES
 device = None
@@ -207,10 +212,10 @@ def createKG():
     triplets = []
 
     # Initialize the client for ArangoDB.
-    client = ArangoClient()
+    client = ArangoClient(hosts=os.getenv('HOST_URL'))
 
     # connect to IoT-KG database as root user
-    db = client.db("_system", username="root", password="Cleffa#173")
+    db = client.db("_system", username=os.getenv('ARRANGODB_USERNAME'), password=os.getenv('ARRANGODB_PASSWORD'))
 
     # creates a new graph
     if not db.has_graph("IoT_KG"):
@@ -460,5 +465,33 @@ def createKG():
         # makes an edge between the from and to nodes
         makeEdge(fromNode, toNode, relationship, graph)
 
+        # adds nodes to the visual graph
+        G.add_node(fromNode[1], type=fromNode[0])
+        G.add_node(toNode[1], type=toNode[0])
+
+        # adds the edge to the visual graph
+        G.add_edge(fromNode[1], toNode[1], relationship=relationship)
+
+    # configures the node colors per type
+    node_colors = [nodeColors[G.nodes[node]['type']] for node in G.nodes]
+
+    pos = nx.spring_layout(G)
+
+    edge_labels = nx.get_edge_attributes(G, "relationship")
+
+    # Visualize the graph and save it as a PNG file
+    plt.figure(figsize=(8, 6))  # Optional: Adjust figure size if needed
+    nx.draw(G, pos, node_color=node_colors, with_labels=True)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    print(list(G.nodes(data=True)))
+    plt.savefig("graph.png", format="PNG")  # Save as PNG
+    plt.close()  # Close the plot to avoid display when running in a script    
+
+    # Clean up the graph after processing
+    
+    #db.delete_graph(graph.name)
+
+
 if __name__ == "__main__":
-    createKG()
+    createKG("triplets.txt")
+

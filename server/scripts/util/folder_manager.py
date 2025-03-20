@@ -1,9 +1,9 @@
 import os
 from bs4 import BeautifulSoup
 
-def create_folder(driver):
+def create_folder(html):
     #create a general folder
-    product_name = extract_product_name(driver)
+    product_name = extract_product_name(html)
     base_folder = os.path.join(os.getcwd(), product_name)
     os.makedirs(base_folder, exist_ok=True)
     
@@ -14,10 +14,9 @@ def create_folder(driver):
         os.makedirs(folder, exist_ok=True)
     return subfolders
 
-def extract_product_name(driver):
+def extract_product_name(html):
     try:
-        #soup = BeautifulSoup(driver.page_source, 'html.parser')
-        soup = BeautifulSoup(driver.text, 'html.parser')
+        soup = BeautifulSoup(html, 'html.parser')
         # grabing the h1
         product_name = soup.find('h1')
         if product_name:

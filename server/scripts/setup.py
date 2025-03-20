@@ -1,10 +1,10 @@
 # setup.py
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from ollama import Client
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Initialize client
+client = Client(host='http://visionpc01.cs.umbc.edu:11434')
