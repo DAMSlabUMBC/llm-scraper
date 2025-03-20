@@ -4,181 +4,95 @@ import ollama
 import torch
 
 def generate(entities):
+    """
+    generates triplets given a json of entities
+    Input: entities ({"entities": [...]})
+    Output: list of triplets ([...])
+    """
     
+    # initializes ollama client
     client = ollama.Client()
     
     # empties the cache
     torch.cuda.empty_cache()
 
+    # prompts deepseek to make triplets given a json on entities
     response = client.chat(
         model='deepseek-r1:70b', 
         messages=[
-            # {
-            #     'role': 'system',
-            #     'content':
-            #     """
-            #         You are a data engineer specialized in constructing knowledge graphs. You will recieve entities extracted from text, images, video, and code content.
-            #         You are tasked with generating a set of triplets strictly in the format ((type1, entity1), relationship, (type2, entity2)) by following these steps:
-
-            #         1. Determine the type of each entity. Entities are limited to the following: device, manufacturer, application, process, sensor, 
-            #         observation, inference, research, privacyPolicy, regulation. DO NOT PRINT A RESPONSE FOR THIS STEP
-
-            #         2. determine the types of relationships occuring between each entity. Relationships are limited to the following: developedBy, 
-            #         manufacturedBy, compatibleWith, hasSensor, accessSensor, requiresSensor, performs, hasPolicy, statesInPolicy, captures, canInfer, 
-            #         showsInference, hasTopic, follows. DO NOT PRINT A RESPONSE FOR THIS STEP
-
-            #         3. Form a set of triplets in the format (('type1', 'entity1'), 'relationship', ('type2', 'entity2')) by following the entity-relationship-entity
-            #         schema:
-            #         application -> developedBy -> manufacturer
-            #         device -> manufacturedBy -> manufacturer
-            #         sensor -> manufacturedBy -> manufactuerer
-            #         device -> compatibleWith -> application
-            #         device -> compatibleWith -> device
-            #         device -> hasSensor -> sensor
-            #         application -> accessSensor -> sensor
-            #         process -> requiresSensor -> sensor
-            #         device -> performs -> process
-            #         application -> performs -> process
-            #         device -> hasPolicy -> privacyPolicy
-            #         application -> hasPolicy -> privacyPolicy
-            #         manufacturer -> hasPolicy -> privacyPolicy
-            #         process -> statesInPolicy -> privacyPolicy
-            #         sensor -> statesInPolicy -> privacyPolicy
-            #         observation -> statesInPolicy -> privacyPolicy
-            #         sensor -> captures -> observation
-            #         observation -> canInfer -> inference
-            #         inference -> canInfer -> inference
-            #         inference -> showsReference -> research
-            #         research -> references -> research
-            #         research -> hasTopic -> process
-            #         research -> hasTopic -> application
-            #         research -> hasTopic -> observation
-            #         research -> hasTopic -> sensor
-            #         research -> hasTopic -> device
-            #         privacyPolicy -> follows -> regulation
-
-            #         Output: a set of triplets (('type1', 'name1'), relationship, ('type2', 'name2')) in a list or an empty list.
-            #         If no triplets are found, return an empty list ([]).
-                    
-            #         Example 1:
-            #         Input:'
-            #         {
-            #             "entities": [
-            #                 "Govee",
-            #                 "Govee Smart Light Bulbs",
-            #                 "Light Bulb",
-            #                 "Alexa",
-            #                 "Google Assistant",
-            #                 "RGBWW",
-            #                 "WiFi",
-            #                 "Bluetooth",
-            #                 "LED Light Bulbs",
-            #                 "A19",
-            #                 "Alexa Privacy Policy",
-            #                 "Google Privacy Policy",
-            #                 "General Data Protection Regulation (GDPR)",
-            #                 "California Consumer Privacy Act (CCPA)",
-            #                 "Personal Information Protection and Electronic Documents Act (PIPEDA)",
-            #                 "voice assistant",
-            #                 "location tracking",
-            #                 "activity tracking",
-            #                 "potential health concerns",
-            #                 "lighting preferences",
-            #                 "sleep patterns"
-            #             ]
-            #         }'
-            #         Output:'
-            #         [
-            #             (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee')),
-            #             (('device', 'Light Bulb'), 'manufacturedBy', ('manufacturer', 'Govee')),
-            #             (('device', 'LED Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee')),
-            #             (('device', 'A19'), 'manufacturedBy', ('manufacturer', 'Govee')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Alexa')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Google Assistant')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'WiFi')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'Bluetooth')),
-            #             (('application', 'Alexa'), 'accessSensor', ('sensor', 'Bluetooth')),
-            #             (('application', 'Google Assistant'), 'accessSensor', ('sensor', 'WiFi')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'performs', ('process', 'activity tracking')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'performs', ('process', 'location tracking')),
-            #             (('application', 'Google Assistant'), 'performs', ('process', 'activity tracking')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('application', 'Alexa'), 'hasPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('application', 'Google Assistant'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('manufacturer', 'Govee'), 'hasPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('manufacturer', 'Govee'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('process', 'activity tracking'), 'statesInPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('process', 'location tracking'), 'statesInPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('sensor', 'WiFi'), 'captures', ('observation', 'lighting preferences')),
-            #             (('sensor', 'Bluetooth'), 'captures', ('observation', 'sleep patterns')),
-            #             (('sensor', 'Bluetooth'), 'captures', ('observation', 'potential health concerns')),
-            #             (('observation', 'voice recordings are collected and stored'), 'statesInPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('observation', 'voice recordings are collected and stored'), 'statesInPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasPolicy', ('privacyPolicy', 'Alexa Privacy Policy')),
-            #             (('privacyPolicy', 'Alexa Privacy Policy'), 'follows', ('regulation', 'California Consumer Privacy Act (CCPA)')),
-            #             (('device', 'Govee Smart Light Bulbs'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-            #             (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'General Data Protection Regulation (GDPR)')),
-            #             (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'Personal Information Protection and Electronic Documents Act (PIPEDA)'))
-            #         ]'
-
-                    
-            #         DO NOT RETURN THE WORD 'JSON' or any other word in the beginning of your response, stricly output the relationships you've created similar to the example output.
-            #     """,
-            # },
-
             {
                 'role': 'system',
                 'content':
                 """
-                    You are a data engineer specialized in constructing knowledge graphs. Given a set of extracted entities, generate triplets in the format ((type1, entity1), relationship, (type2, entity2)) following these rules:
+                    You are a data engineer specialized in constructing knowledge graphs. Given a set of extracted entities, generate triplets in the format:
 
-                    Entities belong to: device, manufacturer, application, process, sensor, observation, inference, research, privacyPolicy, regulation.  
-                    Relationships are: developedBy, manufacturedBy, compatibleWith, hasSensor, accessSensor, requiresSensor, performs, hasPolicy, statesInPolicy, captures, canInfer, showsInference, hasTopic, follows.  
+                ```
+                [(('type1', 'entity1'), 'relationship', ('type2', 'entity2')), ...]
+                ```
 
-                    Follow the schema:  
-                    application -> developedBy -> manufacturer  
-                    device -> manufacturedBy -> manufacturer  
-                    sensor -> manufacturedBy -> manufacturer  
-                    device -> compatibleWith -> application  
-                    device -> compatibleWith -> device  
-                    device -> hasSensor -> sensor  
-                    application -> accessSensor -> sensor  
-                    process -> requiresSensor -> sensor  
-                    device -> performs -> process  
-                    application -> performs -> process  
-                    device -> hasPolicy -> privacyPolicy  
-                    application -> hasPolicy -> privacyPolicy  
-                    manufacturer -> hasPolicy -> privacyPolicy  
-                    process -> statesInPolicy -> privacyPolicy  
-                    sensor -> statesInPolicy -> privacyPolicy  
-                    observation -> statesInPolicy -> privacyPolicy  
-                    sensor -> captures -> observation  
-                    observation -> canInfer -> inference  
-                    inference -> canInfer -> inference  
-                    inference -> showsInference -> research  
-                    research -> references -> research  
-                    research -> hasTopic -> process  
-                    research -> hasTopic -> application  
-                    research -> hasTopic -> observation  
-                    research -> hasTopic -> sensor  
-                    research -> hasTopic -> device  
-                    privacyPolicy -> follows -> regulation  
+                ### **Strict Rules:**
+                - **Output only the list of triplets.**  
+                - **No explanations, bullet points, summaries, or additional text.**  
+                - **Do not introduce or describe the output.**  
+                - **If no valid triplets exist, return `[]` exactly.**
 
-                    Return a list of triplets or `[]` if no valid triplets exist.  
-                    Strictly format output as follows, without explanation:
+                ### **Entity Types:**
+                - device, manufacturer, application, process, sensor, observation, inference, research, privacyPolicy, regulation  
 
-                    Example input:  
-                    {"entities": ["Govee", "Govee Smart Light Bulbs", "Alexa", "WiFi", "Google Privacy Policy", "General Data Protection Regulation (GDPR)"]}
+                ### **Relationships:**
+                - developedBy, manufacturedBy, compatibleWith, hasSensor, accessSensor, requiresSensor, performs, hasPolicy, statesInPolicy, captures, canInfer, showsInference, hasTopic, follows  
 
-                    Expected output:
-                    [
-                    (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee')),
-                    (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Alexa')),
-                    (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'WiFi')),
-                    (('application', 'Alexa'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-                    (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'General Data Protection Regulation (GDPR)'))
-                    ]
+                ### **Triplet Schema:**
+                ```
+                application -> developedBy -> manufacturer
+                device -> manufacturedBy -> manufacturer
+                sensor -> manufacturedBy -> manufacturer
+                device -> compatibleWith -> application
+                device -> compatibleWith -> device
+                device -> hasSensor -> sensor
+                application -> accessSensor -> sensor
+                process -> requiresSensor -> sensor
+                device -> performs -> process
+                application -> performs -> process
+                device -> hasPolicy -> privacyPolicy
+                application -> hasPolicy -> privacyPolicy
+                manufacturer -> hasPolicy -> privacyPolicy
+                process -> statesInPolicy -> privacyPolicy
+                sensor -> statesInPolicy -> privacyPolicy
+                observation -> statesInPolicy -> privacyPolicy
+                sensor -> captures -> observation
+                observation -> canInfer -> inference
+                inference -> canInfer -> inference
+                inference -> showsInference -> research
+                research -> references -> research
+                research -> hasTopic -> process
+                research -> hasTopic -> application
+                research -> hasTopic -> observation
+                research -> hasTopic -> sensor
+                research -> hasTopic -> device
+                privacyPolicy -> follows -> regulation
+                ```
+
+                ### **Example Input:**
+                ```
+                {"entities": ["Govee", "Govee Smart Light Bulbs", "Alexa", "WiFi", "Google Privacy Policy", "General Data Protection Regulation (GDPR)"]}
+                ```
+
+                ### **Expected Output:**
+                ```
+                [
+                (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee')),
+                (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Alexa')),
+                (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'WiFi')),
+                (('application', 'Alexa'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
+                (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'General Data Protection Regulation (GDPR)'))
+                ]
+                ```
+
+                **Output must strictly follow this format with no additional text.** If no valid triplets exist, return:  
+                ```
+                []
+                ```
 
                 """,
             },
@@ -192,11 +106,16 @@ def generate(entities):
 
     print(f"BEFORE PARSING <THINK> {response.message.content}")
     
+    # removes think, json, and python tags
     removed_think_tags = remove_think_tags(response.message.content)
-    return extract_json(removed_think_tags)
-    #return remove_think_tags(response.message.content)
+    return extract_python(extract_json(removed_think_tags))
 
 def parse_string_to_list(input_string):
+    """
+    ensures triplets are in a list
+    Input: input_string (text supposably as a list)
+    Output: list of triplets or None if not in list format
+    """
     # Step 1: Remove unnecessary whitespace and normalize the input string
     input_string = input_string.strip()
     
@@ -222,21 +141,36 @@ def parse_string_to_list(input_string):
     return result
 
 def remove_think_tags(text):
-#     """Removes <think>...</think> sections from DeepSeek output."""
-#     return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+    """
+    removes think tags from generated deepseek output
+    Input: text (with think tags)
+    Output: cleaned_text (without think tags)
+    """
 
     # Remove all occurrences of <think>...</think>
     cleaned_text1 = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
     cleaned_text2 = re.sub(r'^.*?</think>', '', text, flags=re.DOTALL).strip()
     
     if len(cleaned_text1) < len(cleaned_text2):
-        print('CLEANED TEXT 1')
         return cleaned_text1
     else:
-        print('CLEANED TEXT 2')
         return cleaned_text2
     #return cleaned_text.strip()
 
 def extract_json(text):
+    """
+    parses out ```json...``` tags if generated by deepseek
+    Input: text (potentially with json tags)
+    Output: text without json tags
+    """
     # Use regex to remove ```json and ``` markers
     return re.sub(r'^```json\n?|```$', '', text, flags=re.MULTILINE).strip()
+
+def extract_python(text):
+    """
+    parses out ```python...``` tags if generated by deepseek
+    Input: text (potentially with python tags)
+    Output: text without python tags
+    """
+    # Use regex to remove ```json and ``` markers
+    return re.sub(r'^```python\n?|```$', '', text, flags=re.MULTILINE).strip()

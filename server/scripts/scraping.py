@@ -5,15 +5,19 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from util.folder_manager import create_folder
 from util.content_saver import save_content, save_links
-from util.media_downloader import ffmpeg_support
+#from util.media_downloader import ffmpeg_support
 import json
 import re
 import threading
 import requests
 from queue import Queue
+import cloudscraper
+from url_extraction.modules.Amazon import Amazon
+import time
 
 url = "https://www.amazon.com/Smart-Compatible-Assistant-Single-Pole-Certified/dp/B09JZ6W1BH/ref=sr_1_5?dib=eyJ2IjoiMSJ9.YyUdWlFCPDHj7fdR9KXAjgPXxKY87OcP1e_m7O_GJFEFwZx-9FtaiMjDOyIXbbewkED6bSEf7SlAbp97t-qKvpQFN-37BRXh0Ozgi-cM1NeaQXRk5AdWgSWfnmkWGvoWcsIqLUNfNKQO4L0j46Hswx_iySqHCFVmER7JU0h7WApptVAzBQSoP8fBbaZ_BDtSDMnRLE5ZiOg4UejwBKJAuq4U0lC1T8WIBeyJvBiROCZqaTm2Ywm7mEtNxHPj7GDhaOxmNpgddCMnm-wPzYveFbodxJelkM1dx7lV-B3XfdXorasTZ0B560jPfzm5hllKlIs_G8I_vulSNBNw9uecmnVUytn_jRynpXQAPd1p1-x8krhI14LGLYql2NA9X7VSKaZKvlMopcqRNzq6jRCC17c7rvwymbl8TUET056PZi2_sxiBSQdmO81Qrh-UrVZd.YtWOWkxWoG4rQ3k8FFahUql30YHM56CXzxuMtXkoqyg&dib_tag=se&keywords=smart+switches&qid=1737390483&sr=8-5"
 
+MODULES = {"Amazon": Amazon()}
 
 #PARSE_LIST = ["$", "rating", "review", "recommendation", "deliver", "%", "quantity", "star", "ship", "return"]
 TIME_PATTERN = r"^(?:[0-9]|[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$"
@@ -131,6 +135,7 @@ def local_access(url):
         headers = {"User-Agent": fake_useragent.random}
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
+            #print(f"RESPONSE {response.text[:500]}")
             #Commenting out the bot detection check for now 
             #fix later
             #page_text = response.text.lower()
@@ -156,11 +161,23 @@ def local_access(url):
         print(f"[❌] Error during local access: {e}")
         return False
 
-def scrape_website(url):
+def scrape_website(html, moduleName):
+    """
+    scrapes the text, image, code, and video content given an html file
+    Input:
+    html: html code (text)
+    moduleName: name of module (site to be scrapped; modules can be defined inside url_extraction/modules)
+    Output: 
+    text_content: {...} (text)
+    image_content: list of image urls
+    code_content: [...] (text)
+    video_content: (text) 
+    """
+    module = None
     global working_proxy
-    print(f"[🔍] Scraping url:", url)
-    
-    if local_access(url):
+
+    # Local: use proxy rotation and selenium webdriver configuration to store html files locally to scrape entities    
+    """if local_access(url):
         print("[✅] Local access successful.")
     else:
         download_proxy()
@@ -175,7 +192,6 @@ def scrape_website(url):
         
         print(f"[🛰️] Using working proxy: {working_proxy}")
 
-    # Selenium WebDriver Configuration
     options = Options()
     options.headless = True
     fake_useragent = UserAgent()
@@ -190,19 +206,21 @@ def scrape_website(url):
         
     driver = webdriver.Chrome(options=options)
     driver.get(url)
-    html = driver.page_source
+    html = driver.page_source"""
+    
+    # loads the module
+    if moduleName in MODULES:
+        module = MODULES[moduleName]
 
     # Parse the HTML code with Beautiful Soup
     soup = BeautifulSoup(html, 'html.parser')
     
     # Create a dynamic folder based on the URL's hostname
-    subfolder = create_folder(driver)
+    subfolder = create_folder(html)
     
-    # Extract and join the text content
+    # Extract and text content based on given module
     print('[✅] Extracting Text')
-    text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
-    #text_content = ' '.join([elem.get_text(strip=True) for elem in text_elements])
-    text_content = '\n'.join([elem.get_text() for elem in text_elements])
+    text_content = module.parseProducts(soup)
 
     # Extract and serialize the text content of code elements
     print('[✅] Extracting Code')
@@ -234,90 +252,17 @@ def scrape_website(url):
         if src:
             full_video_url = urljoin(url, src)
             video_links.append(full_video_url)
-            video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
+            #video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
         source = video.find('source')
         for source in video.find_all('source'):
             src = source.get('src')
             if src:
                 full_video_url = urljoin(url, src)
                 video_links.append(full_video_url)
-                video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
+                #video_content.append(ffmpeg_support(full_video_url, subfolder['video'], 'video', index=i))
     # Filter out any empty transcriptions and join the remaining ones into a single string.
     video_content = " ".join([transcription for transcription in video_content if transcription.strip()])
 
     print('[💆‍♂️] Video Content Baby: ', video_content)
 
     return text_content, image_content, code_content, video_content
-
-def preprocess(text_content):
-    parsed_lines = []
-    clean_lines = []
-    no_duplicates = []
-
-    # removing the duplicates
-    for line in text_content.split("\n"):
-        no_duplicates.append(line.strip())
-
-    no_duplicates = list(set(no_duplicates))
-
-    for line in no_duplicates:
-        new_line = []
-        for word in line.split():
-
-            """if not bool(re.match(PRICE_PATTERN, word)):
-                new_line.append(word)"""
-
-            # removes prices and percentages
-            if not word.startswith("$") and not word.endswith("%") and not bool(re.match(TIME_PATTERN, word)):
-                new_line.append(word)
-
-        parsed_lines.append(" ".join(new_line))
-
-    for line in parsed_lines:
-        
-        # parsed out any lines with less than or equal to 2 words
-        if len(line.split()) > 2:
-            clean_lines.append(line)
-    
-    return "\n".join(clean_lines)
-
-
-
-    """for line in no_duplicates:
-        parse = False
-
-        # invalid if any of the key words are in the line of text
-        for item in PARSE_LIST:
-            if item in line or item.capitalize() in line or item.upper() in line:
-                parse = True
-                break
-
-        # invalid if its a rating
-        if "out of" in line and "stars" in line:
-            parse = True
-
-        if line.isdigit() or line.isnumeric() or line.isdecimal():
-            parse = True
-        
-        for item in line.split():
-            # invalid if it shows something in time format
-            if bool(re.match(TIME_PATTERN, item)):
-                parse = True
-                break
-
-        if re.match(FORBIDDEN_NUMBERS, line):
-            parse = True
-        
-        if parse == False:
-            clean_lines.append(line)"""
-
-    #return "\n".join(no_duplicates)
-
-
-def numTokens(text_content):
-    num_tokens = 0
-
-    for line in text_content.split("\n"):
-        num_tokens += len(line)
-    
-    return num_tokens

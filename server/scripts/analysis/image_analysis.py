@@ -5,12 +5,26 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 from tqdm import tqdm
 import ollama
 import re
+import io
 from analysis.entity_analysis import analyze_text_elements
+import base64
+import json
 #from entity_analysis import analyze_text_elements
 #import analyze_text_elements
 
+CLASSIFICATIONS = ["UNRENDERED", "LOGO", "DETAILED"]
+
+RETRIES = 3
+
 def analyze_image_elements(image_content):
-    
+    """
+    Extracts image entities
+    Input: image_content (list of image urls)
+    Output: entities (json of list of entities)
+    """
+    #classification = ""
+    summary = ""
+    extracted_entities = ""
     entities = {"entities": set()}
     
     # intializes ollama client
@@ -18,101 +32,114 @@ def analyze_image_elements(image_content):
     
     # iterates through each image url
     for image_url in tqdm(image_content):
+
+        image = image_url
+
+        classification = ""
         
-        # empties the cache
-        torch.cuda.empty_cache()
+        # iterates through number of retries to classify an image
+        for i in range(RETRIES):
+
+            # empties the cache
+            torch.cuda.empty_cache()
+
+            # classifies an image as UNRENDERED, LOGO, and DETAILED
+            response = client.chat(
+            model='llava:34b',
+            messages=[
+                {
+                    'role': 'system',
+                    'content': """
+                        You are an AI model designed to classify images into one of three categories: UNRENDERED, LOGO, or DETAILED.
+
+                        **Definitions:**
+                        - **UNRENDERED**: The image is blurry, incomplete, pixelated, corrupted, very small, or extremely low-resolution, making it difficult to discern details.
+                        - **LOGO**: The image is a simple, symbolic representation, such as a company logo, icon, thumbnail, or watermark, typically with minimal colors, shapes, and no photographic detail.
+                        - **DETAILED**: The image contains recognizable objects, scenes, or rich details that can be described, such as photos, artwork, or complex illustrations.
+
+                        **Classification Criteria:**
+                        - If the image lacks clarity due to **blurriness, corruption, or extreme pixelation**, classify it as **UNRENDERED**.
+                        - If the image is **simple, abstract, or represents a brand symbol**, classify it as **LOGO**.
+                        - If the image contains **rich visual details, complex patterns, or multiple identifiable elements**, classify it as **DETAILED**.
+
+                        **Instructions:**
+                        - Your response must be **only one of the three labels**: UNRENDERED, LOGO, or DETAILED.
+                        - Do **not** provide explanations, descriptions, or additional reasoning.
+                        - Output should be in **uppercase** with no additional text.
+
+                        Example Output:
+                        ```
+                        DETAILED
+                        ```
+
+                        ```
+                        UNRENDERED
+                        ```
+
+                        ```
+                        LOGO
+                        ```
+                    """,
+                },
+                {
+                    'role': 'user',
+                    'content': image,
+                },
+            ],
+            stream=False
+            )
+
+            classification = response.message.content.upper()
+
+            if classification in CLASSIFICATIONS:
+                break
+            else:
+                classification = ""
         
-        response = client.chat(
+        # image is automatically UNRENDERED if failed to classify images for number of retries
+        if classification not in CLASSIFICATIONS:
+            classification = "UNRENDERED"
+
+        print(f"IMAGE CLASSIFICATION: {classification}")
+
+        # summarizes the image if it's DETAILED
+        if classification == "DETAILED":
+
+            # summarizes the image
+            summary = summarize(image)
+
+            print(f"IMAGE DESCRIPTION {summary}")
+
+            # extracts entities from the image summary
+            extracted_entities = analyze_text_elements(summary)
+                
+            print(f"IMAGE OUTPUT {extracted_entities}")
+
+            # adds generated entities to the set of image entities
+            entities["entities"].update(extracted_entities["entities"])
+            
+    
+    entities["entities"] = list(entities["entities"])
+        
+    return entities
+
+def summarize(image):
+    """
+    summarizes a image
+    Input: image (url)
+    Output: summary (text)
+    """
+
+    # intializes ollama client
+    client = ollama.Client()
+
+    # empties the cache
+    torch.cuda.empty_cache()
+
+    # summarizes the image
+    response = client.chat(
             model='llava:34b', 
             messages=[
-#                 {
-#                     'role': 'system',
-#                     'content': """
-#                         You are a Named Entity Recognition (NER) Specialist that extracts IoT-related entities from a given image. The extracted entities must fit into one of these categories:
-#                         - devices
-#                         - manufacturer
-#                         - application
-#                         - process
-#                         - sensor
-#                         - observation
-#                         - inference
-#                         - research
-#                         - privacy policy
-#                         - regulation
-
-#                         ### Output Rules:
-#                         - Output strictly in the JSON format: `{ "entities": [list of entities] }`
-#                         - Do **not** include explanations, reasoning, or extra text.
-#                         - Do **not** use the word "json" in the output.
-#                         - If no entities are found, return `{ "entities": [] }`.
-
-#                         ### Example Outputs:
-#                         **Example 1:**
-#                         Input: `"*** Image of an Amazon Echo Dot, With Alexa, Charcoal *** "`
-#                         Output:
-#                         ```
-#                         {
-#                             "entities": ["Amazon", "Alexa", "Amazon Echo Dot", "Speaker", "voice assistant"]
-#                         }
-#                         ```
-
-#                         **Example 2:**
-#                         Input: `"*** Image with no IoT entities ***"`
-#                         Output:
-#                         ```
-#                         { "entities": [] }
-#                         ```
-
-#                         **INCORRECT OUTPUT:**
-#                         ```json
-#                         {
-#                             "entities": [
-#                                 "Smart Soil Moisture Sensor",
-#                                 "THIRDREALITY",
-#                                 "Zigbee Hub",
-#                                 "Alexa Echo Devices",
-#                                 "Capacitive Probe",
-#                                 "Home Assistant",
-#                                 "Hubitat",
-#                                 "SmartThings",
-#                                 "Homey",
-#                                 "Apple Home",
-#                                 "Google Home",
-#                                 "Remote Monitoring",
-#                                 "Automation",
-#                                 "OTA Updates",
-#                                 "Smart Bridge MZ1"
-#                             ]
-#                         }
-#                         ```
-
-#                         **CORRECT OUTPUT:**
-#                         ```
-#                         {
-#                             "entities": [
-#                                 "Smart Soil Moisture Sensor",
-#                                 "THIRDREALITY",
-#                                 "Zigbee Hub",
-#                                 "Alexa Echo Devices",
-#                                 "Capacitive Probe",
-#                                 "Home Assistant",
-#                                 "Hubitat",
-#                                 "SmartThings",
-#                                 "Homey",
-#                                 "Apple Home",
-#                                 "Google Home",
-#                                 "Remote Monitoring",
-#                                 "Automation",
-#                                 "OTA Updates",
-#                                 "Smart Bridge MZ1"
-#                             ]
-#                         }
-#                         ```
-
-
-#                         **Remember:** Only return JSON, nothing else.
-#                     """,
-#                 },
                 {
                     'role': 'system',
                     'content': """
@@ -122,36 +149,13 @@ def analyze_image_elements(image_content):
 
                 {
                     'role': 'user',
-                    'content': image_url,
+                    'content': image,
                 },
             ],
             stream=False
         )
-        
-        print(f"IMAGE DESCRIPTION {response.message.content}")
-        
-        extracted_entities = analyze_text_elements(response.message.content)
-        
-        print(f"IMAGE OUTPUT {extracted_entities}")
-        
-        try:
-        
-            parsed_json = extract_json(extracted_entities)
 
-            entities_json = eval(parsed_json.strip())
-
-            entities["entities"].update(entities_json["entities"])
-        
-        except:
-            pass
-            #print("FAILED TO ADD ENTITIES")
-        
-        #print(f"ENTITIES {entities}")
+    summary = response.message.content
     
-    entities["entities"] = list(entities["entities"])
-        
-    return str(entities)
-
-def extract_json(text):
-    # Use regex to remove ```json and ``` markers
-    return re.sub(r'^```json\n?|```$', '', text, flags=re.MULTILINE).strip()
+    return summary
+    

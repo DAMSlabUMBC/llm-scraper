@@ -26,6 +26,11 @@ module load ollama # Load the Ollama module for querying models
 # activate conda environment
 conda activate test_env2
 
+sleep 10 # Wait 10 seconds to ensure conda environment has been activated
+
+# checking current conda environments
+conda info --envs
+
 Set up Ollama-specific environment variables
 export OLLAMA_TMPDIR=/nfs/ada/ryus/users/gsantos2/ollama/ollama_tmp # Temporary directory for Ollama
 export OLLAMA_HOST="0.0.0.0" # Host address for Ollama server
@@ -58,7 +63,8 @@ Checking Python version
 python --version
 
 Run the Python script with input, combination, and output file paths
-python main.py --input_file=Amazon_product_urls.txt --output_file=output.txt
+#python main.py --input_file=Amazon_product_urls.txt --output_file=output.txt
+python main.py --input_folder="amazon_batches/batch_1" --output_file="amazon_triplets/triplets_1"
 
 Notify that the Python script execution has finished
 echo "Python script execution completed."
