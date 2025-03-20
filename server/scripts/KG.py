@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 from arango import ArangoClient
 from tqdm import tqdm
 import re
+import networkx as nx
+import matplotlib.pyplot as plt
+import ast
+
 
 # Load environment variables
 load_dotenv()
@@ -35,6 +39,7 @@ showInference = None
 references = None
 hasTopic = None
 follows = None
+weight = None
 
 graph = None
 
@@ -49,17 +54,9 @@ def removeForbiddenChar(nodeKey):
     return newKey
 
 def get_triplets(filename):
-    lines = []
-    triplets = []
-
     with open(filename, "r") as file:
-        lines = file.readlines()
-        
-    #print("ALL TRIPLETS")
-    for line in tqdm(lines):
-        triplet = eval(line.strip())
-        triplets.append(triplet)
-
+        content = file.read()
+    triplets = ast.literal_eval(content)
     return triplets
 
 def insertNode(node, allNodeTypes, graph):
@@ -102,7 +99,7 @@ def makeEdge(fromNode, toNode, relationship, graph):
     edgeCollection = graph.edge_collection(relationship)
 
     # makes a edge between the from and to node
-    edgeCollection.insert({"_from": fromID, "_to": toID})
+    edgeCollection.insert({"_from": fromID, "_to": toID, "weight": 1})
 
 def drop_nodes_and_edges(graph):
     if graph.has_edge_definition("developedBy"):
