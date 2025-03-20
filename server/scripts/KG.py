@@ -1,9 +1,12 @@
 import os
 from dotenv import load_dotenv
 from arango import ArangoClient
+from tqdm import tqdm
+import re
 import networkx as nx
 import matplotlib.pyplot as plt
 import ast
+
 
 # Load environment variables
 load_dotenv()
@@ -40,8 +43,15 @@ weight = None
 
 graph = None
 
-nodeColors = {"device": "red", "manufacturer": "blue", "application": "green", "process": "yellow", "sensor": "cyan", "observation": "magenta",
-              "inference": "gray", "research": "orange", "privacyPolicy": "purple", "regulation": "pink"}
+
+
+triplet_files = ["triplets.txt", "triplets1.txt", "triplets2.txt", "triplets3.txt", "triplets4.txt"]
+
+def removeForbiddenChar(nodeKey):
+
+    newKey = re.sub(r'[^a-zA-Z0-9_-]', '_', nodeKey)
+
+    return newKey
 
 def get_triplets(filename):
     with open(filename, "r") as file:
@@ -55,6 +65,8 @@ def insertNode(node, allNodeTypes, graph):
 
     # generates a key for the node
     nodeKey = "".join(node[1].split())
+
+    nodeKey = removeForbiddenChar(nodeKey)
     #print("device", device)
 
     # checks if the node is of a valid type
@@ -73,6 +85,9 @@ def makeEdge(fromNode, toNode, relationship, graph):
     toNodeType = toNode[0]
     fromNodeKey = "".join(fromNode[1].split())
     toNodeKey = "".join(toNode[1].split())
+
+    fromNodeKey = removeForbiddenChar(fromNodeKey)
+    toNodeKey = removeForbiddenChar(toNodeKey)
 
     fromCollection = graph.vertex_collection(fromNodeType)
     toCollection = graph.vertex_collection(toNodeType)
@@ -190,7 +205,9 @@ def drop_nodes_and_edges(graph):
         graph.delete_vertex_collection("regulation", purge=True)
     pass
 
-def createKG(triplets_file):
+def createKG():
+    triplets = []
+
     # Initialize the client for ArangoDB.
     client = ArangoClient(hosts=os.getenv('HOST_URL'))
 
@@ -267,10 +284,6 @@ def createKG(triplets_file):
         regulation = graph.create_vertex_collection("regulation")
     else:
         regulation = graph.vertex_collection("regulation")
-
-    """print("ALL NODE COLLECTIONS")
-    for collection in graph.vertex_collections():
-        print(collection)"""
 
     # creates edge collection for developedBy
     if not graph.has_edge_definition("developedBy"):
@@ -427,13 +440,15 @@ def createKG(triplets_file):
                     "inference": inference, "research": research, "privacyPolicy": privacyPolicy, "regulation": regulation}
 
 
-    triplets = get_triplets(triplets_file)
+    for triplet_file in triplet_files:
 
-    G = nx.Graph()
+        triplets.extend(get_triplets(triplet_file))
+
+    triplets = set(triplets)
 
     # Process triplets here
-    for triplet in triplets:
-        print("triplet", triplet)
+    for triplet in tqdm(triplets):
+        #print("triplet", triplet)
         fromNode = triplet[0]
         relationship = triplet[1]
         toNode = triplet[2]
@@ -476,3 +491,4 @@ def createKG(triplets_file):
 
 if __name__ == "__main__":
     createKG("triplets.txt")
+

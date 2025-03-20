@@ -111,7 +111,22 @@ class Amazon():
         """
         name = soup.find("span", {"class": "a-size-large product-title-word-break"})
         if name != None:
+            print("FOUND NAME")
             name = name.get_text(strip=True)
+        
+        if name == None:
+            name = soup.find("div", {"id": "title_feature_div"})
+            if name != None:
+                print("FOUND NAME")
+                name = name.get_text(strip=True)
+                
+        if name == None:
+            name = soup.find("span", {"id": "title"})
+            if name != None:
+                print("FOUND NAME")
+                name = name.get_text(strip=True)
+                
+                
             
         #class="a-normal a-spacing-micro"
         
@@ -125,10 +140,23 @@ class Amazon():
                     if manufacturer != None:
                         manufacturer = manufacturer.find("span", {"class": "a-size-base po-break-word"})
                         if manufacturer != None:
+                            print("FOUND MANUFACTURER")
                             manufacturer = manufacturer.get_text(strip=True)
+        if manufacturer == None:
+            manufacturer = soup.find("a", {"class": "a-color-base a-link-normal a-text-bold"})
+            if manufacturer != None:
+                print("FOUND MANUFACTURER")
+                manufacturer = manufacturer.get_text(strip=True)
 
         details_elements = soup.select('.a-unordered-list.a-vertical.a-spacing-mini')
         details = ' | '.join([elem.get_text(strip=True) for elem in details_elements])
+        
+        if details == "":
+            details_elements = soup.find('div', {'id': 'feature-bullets'})
+
+            # Extract all bullet points
+            if details_elements:
+                details = ' | '.join([li.get_text(strip=True) for li in details_elements.find_all('li')])
 
         # finds the url to the product
         url = soup.find("link", {"rel": "canonical"})
