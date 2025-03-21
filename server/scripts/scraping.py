@@ -3,8 +3,8 @@ from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from util.folder_manager import create_folder
-from util.content_saver import save_content, save_links
+from util.media.folder_manager import create_folder
+from util.media.content_saver import save_content, save_links
 #from util.media_downloader import ffmpeg_support
 import json
 import re
