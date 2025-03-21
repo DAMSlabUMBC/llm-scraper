@@ -63,7 +63,6 @@ def get_triplets(filename):
     return triplets
 
 def insertNode(node, allNodeTypes, graph):
-    print("Inside of insertNode: ", node)
     nodeType = node[0]
     nodeName = node[1]
 
@@ -444,6 +443,9 @@ def createKG():
                     "inference": inference, "research": research, "privacyPolicy": privacyPolicy, "regulation": regulation}
 
 
+    nodeSet = {"device","manufacturer","application","process","sensor","observation","inference","research","privacyPolicy","regulation"}
+    edgeSet = {"developedBy","manufacturedBy","compatibleWith", "hasSensor","accessSensor","requiresSensor","performs","hasPolicy","statesInPolicy","captures","canInfer","showInference","references","hasTopic","follows","weight"}
+
     for triplet_file in triplet_files:
 
         triplets.extend(get_triplets(triplet_file))
@@ -452,7 +454,11 @@ def createKG():
 
     # Process triplets here
     for triplet in tqdm(triplets):
-        #print("triplet", triplet)
+        print("triplet", triplet)
+        if(triplet[0][0] not in nodeSet or triplet[2][0] not in nodeSet or triplet[1] not in edgeSet):
+            print("Invalid triplet, skipping: ", triplet)
+            continue
+
         fromNode = triplet[0]
         relationship = triplet[1]
         toNode = triplet[2]
