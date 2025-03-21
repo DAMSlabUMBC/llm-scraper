@@ -30,7 +30,6 @@ RETRIES = 3
 def main():
 
     
-    URL_list = []
     html = ""
     text_result = {"entities": []}
     image_result = {"entities": []}
@@ -43,7 +42,7 @@ def main():
     # Adding input and output arguments
     parser.add_argument("--input_folder", required=True, help="Path to the input file")
     parser.add_argument("--output_file", required=True, help="Path to save the output file")
-    parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")  # Add this line
+    parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")
 
 
     # parses the arguments
@@ -148,7 +147,6 @@ def main():
             result_list = []
 
         print('[😻] Final Response: ', result_list)
-        print(result_list)
 
         triplets_list = []
 
