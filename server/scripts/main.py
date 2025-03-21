@@ -1,6 +1,5 @@
 import sys
 sys.dont_write_bytecode = True
-from setup import client
 from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements

@@ -1,4 +1,3 @@
-from setup import client
 import spacy
 import transformers
 import ollama

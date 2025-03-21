@@ -1,4 +1,3 @@
-from setup import client
 import re
 import ollama
 import torch
