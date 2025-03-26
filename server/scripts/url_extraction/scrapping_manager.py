@@ -1,4 +1,4 @@
-from url_extraction.modules.Amazon import Amazon
+from modules.Amazon import Amazon
 import os
 from tqdm import tqdm
 import urllib.parse

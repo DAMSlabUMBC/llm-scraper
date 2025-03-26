@@ -6,7 +6,7 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
-from url_extraction.scrapping_manager import ScrappingManager
+from util.scraper.scrapping_manager import ScrappingManager
 import time
 import os
 import logging
