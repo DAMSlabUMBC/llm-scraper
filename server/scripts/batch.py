@@ -5,7 +5,7 @@ import shutil
 source_dir = "amazon_htmls"  # Change this to your directory
 dest_dir = "amazon_batches"  # Change this to where folders should be created
 
-batch_size = 80
+batch_size = 50
 
 def batch_files(source, destination, batch_size):
     files = [f for f in os.listdir(source) if os.path.isfile(os.path.join(source, f))]
@@ -26,4 +26,5 @@ def batch_files(source, destination, batch_size):
         print(f"Moved {len(batch_files)} files to {batch_folder}")
 
 if __name__ == "__main__":
+    print("starting batches")
     batch_files(source_dir, dest_dir, batch_size)

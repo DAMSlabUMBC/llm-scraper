@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
-#SBATCH --array=2-31                        # Run array tasks 0..999 (i.e. 1000 tasks)
+#SBATCH --array=1-50                        # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
 #SBATCH --mem=150000                        # Memory allocation in MB (150 GB)

@@ -193,12 +193,8 @@ def scrape_website(html, moduleName):
         
         print(f"[🛰️] Using working proxy: {working_proxy}")
 
-<<<<<<< HEAD
-    # Selenium WebDriver Configuration
-    """options = Options()
-=======
+
     options = Options()
->>>>>>> main
     options.headless = True
     fake_useragent = UserAgent()
     options.add_argument(f'user-agent={fake_useragent.random}')
@@ -211,39 +207,30 @@ def scrape_website(html, moduleName):
     options.add_argument("--disable-dev-shm-usage")  # Overcome resource limitations
         
     driver = webdriver.Chrome(options=options)
-<<<<<<< HEAD
-    driver.get(url)"""
-    
-    # Create a cloudscraper instance
-    scraper = cloudscraper.create_scraper()
-=======
+
     driver.get(url)
     html = driver.page_source"""
     
     # loads the module
     if moduleName in MODULES:
         module = MODULES[moduleName]
->>>>>>> main
+
 
     # Fetch the webpage content
-    response = scraper.get(url)
+    """response = scraper.get(url)
     if response.status_code != 200:
         raise ScrapingError(f"Unable to scrape {url} - Status Code: {response.status_code}")
         #print(f"[❌] Failed to fetch {url}, Status Code: {response.status_code}")
         #return None, None, None, None
 
-    html = response.text
+    html = response.text"""
     soup = BeautifulSoup(html, 'html.parser')
 
     # Parse the HTML code with Beautiful Soup
     #soup = BeautifulSoup(html, 'html.parser')
     
     # Create a dynamic folder based on the URL's hostname
-<<<<<<< HEAD
-    subfolder = create_folder(response)
-=======
     subfolder = create_folder(html)
->>>>>>> main
     
     # Extract and text content based on given module
     print('[✅] Extracting Text')
