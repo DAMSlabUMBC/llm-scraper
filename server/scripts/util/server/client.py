@@ -12,6 +12,37 @@ def create_sftp_client(host, port, username, password):
     sftp = paramiko.SFTPClient.from_transport(transport)
     return sftp, transport
 
+def read_files_in_batches(sftp, remote_dest_dir):
+    print(f"Reading files from remote directory: {remote_dest_dir}")
+    try:
+        # List items in the base remote directory (should be batch folders)
+        batch_folders = sftp.listdir(remote_dest_dir)
+    except Exception as e:
+        print(f"Error listing remote directory {remote_dest_dir}: {e}")
+        return
+
+    # Process each batch folder (sorting for predictable order)
+    for folder in sorted(batch_folders):
+        remote_batch_folder = os.path.join(remote_dest_dir, folder)
+        print(f"\n--- Reading files in batch folder: {remote_batch_folder} ---")
+        try:
+            files = sftp.listdir(remote_batch_folder)
+        except Exception as e:
+            print(f"Error listing folder {remote_batch_folder}: {e}")
+            continue
+
+        # Process each file in the batch folder
+        for file in files:
+            remote_file_path = os.path.join(remote_batch_folder, file)
+            try:
+                with sftp.open(remote_file_path, 'r') as remote_file:
+                    # Read the file content. If the files are text files,
+                    # this should work fine. For binary files, you may need to
+                    # handle decoding accordingly.
+                    content = remote_file.read()
+                    print(f"\nContents of {remote_file_path}:\n{content}\n")
+            except Exception as e:
+                print(f"Error reading file {remote_file_path}: {e}")
 
 
 def upload_files_in_batches(sftp, source_dir, remote_dest_dir, batch_size=1):
@@ -79,7 +110,10 @@ if __name__ == "__main__":
         ensure_remote_directory(sftp, remote_dest_dir)
         
         # Upload files in batches
-        upload_files_in_batches(sftp, source_dir, remote_dest_dir, batch_size)
+        # upload_files_in_batches(sftp, source_dir, remote_dest_dir, batch_size)
+
+        # Read files in batches
+        read_files_in_batches(sftp, remote_dest_dir)
     finally:
         # Always close the connection
         sftp.close()
