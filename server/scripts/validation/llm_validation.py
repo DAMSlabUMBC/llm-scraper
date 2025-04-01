@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
+from util.scraper.browser import get_chrome_driver
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -45,16 +46,8 @@ def get_urls(query):
         "/ServiceLogin",
     }
 
-    options = Options()
-    options.headless = True
-    fake_useragent = UserAgent()
-    options.binary_location = os.getenv('CHROME_PATH')
-    options.add_argument(f'user-agent={fake_useragent.random}')
-    options.add_argument('--disable-blink-features=AutomationControlled') 
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-        
-    driver = webdriver.Chrome(options=options)
+    
+    driver = get_chrome_driver()
     driver.get('https://www.google.com')
     wait = WebDriverWait(driver, 10)
 
