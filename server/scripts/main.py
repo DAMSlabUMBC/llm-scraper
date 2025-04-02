@@ -1,13 +1,12 @@
 import sys
 sys.dont_write_bytecode = True
-from setup import client
 from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements
-from analysis.relationship_analysis import generate, parse_string_to_list
-from agents.model import response
+from analysis.relationship_analysis import generate
+from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
-from url_extraction.scrapping_manager import ScrappingManager
+from util.scraper.scrapping_manager import ScrappingManager
 import time
 import os
 import logging
@@ -30,7 +29,6 @@ RETRIES = 3
 def main():
 
     
-    URL_list = []
     html = ""
     text_result = {"entities": []}
     image_result = {"entities": []}
@@ -43,7 +41,7 @@ def main():
     # Adding input and output arguments
     parser.add_argument("--input_folder", required=True, help="Path to the input file")
     parser.add_argument("--output_file", required=True, help="Path to save the output file")
-    parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")  # Add this line
+    parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")
 
 
     # parses the arguments
@@ -148,7 +146,6 @@ def main():
             result_list = []
 
         print('[😻] Final Response: ', result_list)
-        print(result_list)
 
         triplets_list = []
 
