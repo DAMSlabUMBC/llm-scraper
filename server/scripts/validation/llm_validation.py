@@ -4,12 +4,10 @@ import ast
 from dotenv import load_dotenv
 import torch
 from sentence_transformers import SentenceTransformer, util
-
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
-from util.scraper.browser import get_chrome_driver
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +17,7 @@ import threading
 from urllib.parse import urlparse
 import time
 
-from transformers import BartForSequenceClassification, BartTokenizer
+from transformers import BartForSequenceClassification, BartTokenizer, AutoTokenizer
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-mnli')
 model = BartForSequenceClassification.from_pretrained('facebook/bart-large-mnli')
 
@@ -46,8 +44,16 @@ def get_urls(query):
         "/ServiceLogin",
     }
 
-    
-    driver = get_chrome_driver()
+    options = Options()
+    options.headless = True
+    fake_useragent = UserAgent()
+    #options.binary_location = os.getenv('CHROME_PATH')
+    options.add_argument(f'user-agent={fake_useragent.random}')
+    options.add_argument('--disable-blink-features=AutomationControlled') 
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+        
+    driver = webdriver.Chrome(options=options)
     driver.get('https://www.google.com')
     wait = WebDriverWait(driver, 10)
 
@@ -145,22 +151,24 @@ def main():
             soup = BeautifulSoup(page.content, 'html.parser')
             text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
             text_content = '\n'.join([elem.get_text() for elem in text_elements])
+            
 
-            # pose sequence as a NLI premise and label (politics) as a hypothesis
+            #initialize the model
+            device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        
+            
             premise = text_content
-            hypothesis = query
+            hypothesis = f"This text is about {query}"
+            inputs = tokenizer.encode(premise, hypothesis, return_tensors='pt', truncation=True, max_length=512)
+            inputs = inputs.to(device)
+            model.to(device)
+            with torch.no_grad():
+                logits = model(inputs).logits
 
-            # run through model pre-trained on MNLI
-            input_ids = tokenizer.encode(premise, hypothesis, return_tensors='pt')
-            logits = model(input_ids)[0]
-
-            # we throw away "neutral" (dim 1) and take the probability of
-            # "entailment" (2) as the probability of the label being true 
-            entail_contradiction_logits = logits[:,[0,2]]
-            probs = entail_contradiction_logits.softmax(dim=1)
-            true_prob = probs[:,1].item() * 100
-
-            print("Probability: ", true_prob)
+            ec_logits = logits[:, [0, 2]]  
+            probs = ec_logits.softmax(dim=1)
+            true_prob = probs[:, 1].item() * 100
+            print(f'Probability that the label is true: {true_prob:0.2f}% for url {url}')
 
         #     # Compute SBERT-based semantic similarity
         #     similarity_score = compute_semantic_similarity(query, text_content)
