@@ -6,7 +6,8 @@ from fake_useragent import UserAgent
 import requests
 from queue import Queue
 import threading
-from scraping import download_proxy, test_proxy, load_proxies, find_working_proxy, local_access
+from util.scraper.proxy import download_proxy, load_proxy, find_working_proxy, local_access
+from util.scraper.browser import get_chrome_driver
 import logging
 
 logging.basicConfig(
@@ -34,10 +35,10 @@ def extract_html(url, html_number):
         print("[✅] Local access successful.")
     else:
         download_proxy()
-        load_proxies()
+        load_proxy()
         working_proxy = find_working_proxy()
         if working_proxy is None:
-            load_proxies()
+            load_proxy()
             working_proxy = find_working_proxy()
         if working_proxy is None:
             print("[❌] No working proxy found.")
@@ -45,22 +46,9 @@ def extract_html(url, html_number):
         
         print(f"[🛰️] Using working proxy: {working_proxy}")
 
-    return
-
     # Selenium WebDriver Configuration
-    options = Options()
-    options.headless = True
-    fake_useragent = UserAgent()
-    options.add_argument(f'user-agent={fake_useragent.random}')
-    
-    if working_proxy:
-        options.add_argument(f'--proxy-server={working_proxy}')
-    
-    options.add_argument("--headless")  # Run headless
-    options.add_argument("--no-sandbox")  # Necessary for some restricted environments
-    options.add_argument("--disable-dev-shm-usage")  # Overcome resource limitations
-        
-    driver = webdriver.Chrome(options=options)
+    driver = get_chrome_driver(headless=True, use_proxy=working_proxy)
+
     try:
         driver.get(url)
         html = driver.page_source
@@ -70,7 +58,7 @@ def extract_html(url, html_number):
             file.write(html)
     except Exception as e:
         print(f"Page crash detected for {file_name}, skipping...")
-        print(f"Error: {e}")  # Print the specific error
+        print(f"Error: {e}")
         logging.error(f"Error extracting contents from {GROUP} link {html_number}")
             
     
