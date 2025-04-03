@@ -44,38 +44,6 @@ def read_files_in_batches(sftp, remote_dest_dir):
             except Exception as e:
                 print(f"Error reading file {remote_file_path}: {e}")
 
-
-def upload_files_in_batches(sftp, source_dir, remote_dest_dir, batch_size=1):
-    # List only files (ignore subdirectories)
-    files = [f for f in os.listdir(source_dir) if os.path.isfile(os.path.join(source_dir, f))]
-    total_files = len(files)
-    num_batches = (total_files // batch_size) + (1 if total_files % batch_size else 0)
-
-    for batch_num in range(num_batches):
-        # Define remote batch folder path
-        remote_batch_folder = os.path.join(remote_dest_dir, f"batch_{batch_num + 1}")
-
-        # Create the remote directory if it doesn't exist
-        try:
-            sftp.stat(remote_batch_folder)
-        except FileNotFoundError:
-            sftp.mkdir(remote_batch_folder)
-            print(f"Created remote folder: {remote_batch_folder}")
-
-        # Calculate file indices for the current batch
-        start_index = batch_num * batch_size
-        end_index = min(start_index + batch_size, total_files)
-        batch_files = files[start_index:end_index]
-
-        # Upload each file in the current batch
-        for file in batch_files:
-            local_file_path = os.path.join(source_dir, file)
-            remote_file_path = os.path.join(remote_batch_folder, file)
-            sftp.put(local_file_path, remote_file_path)
-            print(f"Uploaded {file} to {remote_file_path}")
-
-        print(f"Batch {batch_num + 1}: Uploaded {len(batch_files)} files.")
-
 def ensure_remote_directory(sftp, remote_directory):
     """
     Recursively create remote directories if they don't exist.
@@ -108,9 +76,6 @@ if __name__ == "__main__":
     try:
         # Ensure the base remote directory exists
         ensure_remote_directory(sftp, remote_dest_dir)
-        
-        # Upload files in batches
-        # upload_files_in_batches(sftp, source_dir, remote_dest_dir, batch_size)
 
         # Read files in batches
         read_files_in_batches(sftp, remote_dest_dir)
