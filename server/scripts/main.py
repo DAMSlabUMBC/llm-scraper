@@ -150,8 +150,9 @@ def main():
         triplets_list = []
 
         for triplet in result_list:
-            triplets_list.append(str(triplet))
-
+            default_weight = 0.5
+            triplets_list.append(str(triplet + (default_weight,)))
+        
         # appends the triplets into designated triplet file
         with open(output, "a") as file:
             for triplet in triplets_list:
