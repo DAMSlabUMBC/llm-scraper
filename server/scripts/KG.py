@@ -83,7 +83,7 @@ def insertNode(node, allNodeTypes, graph):
             collection.insert({"_key": nodeKey, "name": nodeName})
 
 
-def makeEdge(fromNode, toNode, relationship, graph):
+def makeEdge(fromNode, toNode, relationship, weight, graph):
     fromNodeType = fromNode[0]
     toNodeType = toNode[0]
     fromNodeKey = "".join(fromNode[1].split())
@@ -102,7 +102,7 @@ def makeEdge(fromNode, toNode, relationship, graph):
     edgeCollection = graph.edge_collection(relationship)
 
     # makes a edge between the from and to node
-    edgeCollection.insert({"_from": fromID, "_to": toID, "weight": 1})
+    edgeCollection.insert({"_from": fromID, "_to": toID, "weight": weight})
 
 def drop_nodes_and_edges(graph):
     if graph.has_edge_definition("developedBy"):
@@ -462,6 +462,7 @@ def createKG():
         fromNode = triplet[0]
         relationship = triplet[1]
         toNode = triplet[2]
+        weight = triplet[3]
 
         # makes the fromNodes
         insertNode(fromNode, allNodeTypes, graph)
@@ -470,7 +471,7 @@ def createKG():
         insertNode(toNode, allNodeTypes, graph)
 
         # makes an edge between the from and to nodes
-        makeEdge(fromNode, toNode, relationship, graph)
+        makeEdge(fromNode, toNode, relationship, weight, graph)
 
 
 
