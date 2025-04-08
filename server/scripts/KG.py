@@ -45,7 +45,7 @@ graph = None
 
 
 
-triplet_files = ["triplets.txt", "triplets1.txt", "triplets2.txt", "triplets3.txt", "triplets4.txt"]
+triplet_files = ["triplets.txt", "triplets1.txt", "triplets2.txt", "triplets3.txt"]
 
 def removeForbiddenChar(nodeKey):
 
@@ -54,9 +54,12 @@ def removeForbiddenChar(nodeKey):
     return newKey
 
 def get_triplets(filename):
+    triplets = []
     with open(filename, "r") as file:
-        content = file.read()
-    triplets = ast.literal_eval(content)
+        for line in file:
+            # Skip empty lines
+            if line.strip():
+                triplets.append(ast.literal_eval(line))
     return triplets
 
 def insertNode(node, allNodeTypes, graph):
@@ -440,6 +443,9 @@ def createKG():
                     "inference": inference, "research": research, "privacyPolicy": privacyPolicy, "regulation": regulation}
 
 
+    nodeSet = {"device","manufacturer","application","process","sensor","observation","inference","research","privacyPolicy","regulation"}
+    edgeSet = {"developedBy","manufacturedBy","compatibleWith", "hasSensor","accessSensor","requiresSensor","performs","hasPolicy","statesInPolicy","captures","canInfer","showInference","references","hasTopic","follows","weight"}
+
     for triplet_file in triplet_files:
 
         triplets.extend(get_triplets(triplet_file))
@@ -448,7 +454,11 @@ def createKG():
 
     # Process triplets here
     for triplet in tqdm(triplets):
-        #print("triplet", triplet)
+        print("triplet", triplet)
+        if(triplet[0][0] not in nodeSet or triplet[2][0] not in nodeSet or triplet[1] not in edgeSet):
+            print("Invalid triplet, skipping: ", triplet)
+            continue
+
         fromNode = triplet[0]
         relationship = triplet[1]
         toNode = triplet[2]
@@ -462,33 +472,8 @@ def createKG():
         # makes an edge between the from and to nodes
         makeEdge(fromNode, toNode, relationship, graph)
 
-        # adds nodes to the visual graph
-        G.add_node(fromNode[1], type=fromNode[0])
-        G.add_node(toNode[1], type=toNode[0])
-
-        # adds the edge to the visual graph
-        G.add_edge(fromNode[1], toNode[1], relationship=relationship)
-
-    # configures the node colors per type
-    node_colors = [nodeColors[G.nodes[node]['type']] for node in G.nodes]
-
-    pos = nx.spring_layout(G)
-
-    edge_labels = nx.get_edge_attributes(G, "relationship")
-
-    # Visualize the graph and save it as a PNG file
-    plt.figure(figsize=(8, 6))  # Optional: Adjust figure size if needed
-    nx.draw(G, pos, node_color=node_colors, with_labels=True)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    print(list(G.nodes(data=True)))
-    plt.savefig("graph.png", format="PNG")  # Save as PNG
-    plt.close()  # Close the plot to avoid display when running in a script    
-
-    # Clean up the graph after processing
-    
-    #db.delete_graph(graph.name)
 
 
 if __name__ == "__main__":
-    createKG("triplets.txt")
+    createKG()
 
