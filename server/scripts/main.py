@@ -6,7 +6,10 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
+
 from util.scraper.scrapping_manager import ScrappingManager
+from util.server.client import read_files_in_batches, create_sftp_client
+
 import time
 import os
 import logging
@@ -27,6 +30,16 @@ AmazonModule = "Amazon"
 RETRIES = 3
 
 def main():
+
+    host = os.getenv("HOST_URL")             # Server address
+    port = 22                                # Default SFTP port
+    username = os.getenv("USERNAME")         # Server username
+    password = os.getenv("PASSWORD")         # Server password
+    remote_dest_dir = f"/home/{username}/amazon_htmls"
+    print(host, username, password, remote_dest_dir)
+
+    # Create the SFTP connection
+    sftp, transport = create_sftp_client(host, port, username, password)
 
     
     html = ""
@@ -72,6 +85,8 @@ def main():
     
     # gets all the html code in a specific batch
     entries = list(os.scandir(batch_folder))
+    # update entries to come from server
+    entries = list(read_files_in_batches(sftp, remote_dest_dir))
     
     # iterates through each html file
     for i in tqdm(range(len(entries))):
@@ -150,8 +165,9 @@ def main():
         triplets_list = []
 
         for triplet in result_list:
-            triplets_list.append(str(triplet))
-
+            default_weight = 0.5
+            triplets_list.append(str(triplet + (default_weight,)))
+        
         # appends the triplets into designated triplet file
         with open(output, "a") as file:
             for triplet in triplets_list:
