@@ -15,7 +15,44 @@ We want to ideally return the triplet with its new and ACCURATE weight, meaning 
 
 def expensive_validation(triplet):
     print("Inside of expensive")
+
+    formatted_triplet = triplet
+
+    deepseek_result = deepseek_judge(formatted_triplet)
+    print(f"DeepSeek judge result: {deepseek_result}")
+
     
+    gemma3_result = gemma3_judge(formatted_triplet)
+    #qwq_result = qwq_judge(formatted_triplet)
+    #llama3_result = llama3_judge(formatted_triplet)
+    print(f"gemma judge result: {gemma3_result}")  
+   
+    all_results = [deepseek_result, gemma3_result]
+
+    
+    for res in all_results:
+        if res['isCorrect'] is not None:
+            is_correct_votes.append(res['isCorrect'])
+
+    confidence_scores = [res['confidence'] for res in all_results]
+
+    if len(is_correct_votes) == 0:
+        final_correct = None
+    else:
+        final_correct = is_correct_votes.count(True) > len(is_correct_votes) / 2
+        if(confidence_scores){
+            avg_confidence = sum(confidence_scores) / len(confidence_scores)
+        }else{
+            avg_confidence = 0.0
+        }
+     
+
+    return {
+        'triplet': triplet,
+        'isCorrect': final_correct,
+        'confidence': round(avg_confidence, 3)
+    }
+
 def deepseek_creator(triplet):
     print("Inside of Deepseek creator")
     client = ollama.Client()
@@ -41,15 +78,122 @@ def deepseek_creator(triplet):
     )
 
 
-def gemma3_creator(triplet):
-    print("Inside of Gemma3 creator")
-    
-def qwq_creator(triplet):
-    print("Inside of QWQ creator")
-    
-def llama3_creator(triplet):
-    print("Inside of llama3.3 creator")
+def gemma3_judge(triplet):
+    client = ollama.Client()
+    torch.cuda.empty_cache()
 
+    response = client.chat(
+        model='gemma3:1b',
+        messages=[
+            {
+                'role': 'system',
+                 'content': """
+                    You are a judge. Given a triple in the format (subject, predicate, object), return your judgment in **ONLY** this exact JSON format with no explanation or commentary:
+
+                    {
+                    "isCorrect": (boolean),
+                    "confidence": (float 0-1)
+                    }
+
+                    Do not include any markdown, text, or comments. Only return valid JSON.
+                    """
+                    },
+            {
+                'role': 'user',
+                'content': f"Judge this triplet: {triplet}",
+            }
+        ],
+        stream=False
+    )
+
+    cleaned = remove_think_tags(response['message']['content'])
+    json_text = extract_json(cleaned)
+
+    try:
+        result = json.loads(json_text)
+    except json.JSONDecodeError:
+        result = extractValidationResults(cleaned)
+
+    return result
+
+def qwq_judge(triplet):
+    print("Inside of QWQ judge")
+    client = ollama.Client()
+    torch.cuda.empty_cache()
+
+    response = client.chat(
+        model='qwq:latest',
+        messages=[
+            {
+                'role': 'system',
+                 'content': """
+                    You are a judge. Given a triple in the format (subject, predicate, object), return your judgment in **ONLY** this exact JSON format with no explanation or commentary:
+
+                    {
+                    "isCorrect": (boolean),
+                    "confidence": (float 0-1)
+                    }
+
+                    Do not include any markdown, text, or comments. Only return valid JSON.
+                    """,
+            },
+            {
+                'role': 'user',
+                'content': f"Please judge this triplet: {triplet}",
+            },
+        ],
+        stream=False
+    )
+
+    cleaned = remove_think_tags(response['message']['content'])
+    json_text = extract_json(cleaned)
+
+    try:
+        result = json.loads(json_text)
+    except json.JSONDecodeError:
+        result = extractValidationResults(cleaned)
+
+    return result
+   
+
+def llama3_judge(triplet):
+    print("Inside of llama3.3 judge")
+    client = ollama.Client()
+    torch.cuda.empty_cache()
+
+    response = client.chat(
+        model='llama3:latest',
+        messages=[
+            {
+                'role': 'system',
+                 'content': """
+                    You are a judge. Given a triple in the format (subject, predicate, object), return your judgment in **ONLY** this exact JSON format with no explanation or commentary:
+
+                    {
+                    "isCorrect": (boolean),
+                    "confidence": (float 0-1)
+                    }
+
+                    Do not include any markdown, text, or comments. Only return valid JSON.
+                    """
+            },
+            {
+                'role': 'user',
+                'content': f"Please judge this triplet: {triplet}",
+            },
+        ],
+        stream=False
+    )
+
+    cleaned = remove_think_tags(response['message']['content'])
+    json_text = extract_json(cleaned)
+
+    try:
+        result = json.loads(json_text)
+    except json.JSONDecodeError:
+        result = extractValidationResults(cleaned)
+
+    return result
 
 '''
 This function will use deepseek to judge a triple.
@@ -67,15 +211,21 @@ def deepseek_judge(triplet):
     
     
     response = client.chat(
-        model='deepseek-r1:70b', 
+        model='deepseek-r1:1.5b', 
         messages=[
             {
                 'role': 'system',
                 'content': """
-                    You are a judge. Given a triple of subject relation object, you must determine
-                    if this information is "factually" correct. Return as a JSON in the format:
-                    isCorrect(boolean), confidence(float 0-1)
-                """,
+                    You are a judge. Given a triple in the format (subject, predicate, object), return your judgment in **ONLY** this exact JSON format with no explanation or commentary:
+
+                    {
+                    "isCorrect": (boolean),
+                    "confidence": (float 0-1)
+                    }
+
+                    Do not include any markdown, text, or comments. Only return valid JSON.
+                    """
+,
             },
             {
                 'role': 'user',
@@ -103,15 +253,7 @@ def deepseek_judge(triplet):
     
     return judgment
 
-def gemma3_judge(triplet):
-    print("Inside of Gemma3 judge")
-    
-def qwq_judge(triplet):
-    print("Inside of QWQ judge")
-    
-def llama3_judge(triplet):
-    print("Inside of llama3.3 judge")
-    
+ 
 def remove_think_tags(text):
 #     """Removes <think>...</think> sections from DeepSeek output."""
 #     return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
@@ -148,9 +290,9 @@ def extractValidationResults(text):
     
     #match regex to the response
     isCorrect = None
-    if re.search(r'\b(correct|accurate|true|valid|factual)\b', lowerText):
+    if re.search(r'\b(correct|accurate|true|valid|factual|Correct | Accurate|True|Valid|Factual)\b', lowerText):
         isCorrect = True
-    elif re.search(r'\b(incorrect|inaccurate|false|invalid|not factual)\b', lowerText):
+    elif re.search(r'\b(incorrect|inaccurate|false|invalid|not factual|Incorrect|Inaccurate|False|Invalid|Not factual)\b', lowerText):
         isCorrect = False
     
     #confidence level
@@ -191,7 +333,12 @@ def format_triplet(triplet):
     return f"{subject[1]} {predicate} {obj[1]}"
 
 def main():
-    return 
+    test_triplet = ('Smart LED Light Bars', 'manufacturedby', 'govee')
+
+    result = expensive_validation(test_triplet)
+
+    print("\n=== Final Judgment ===")
+    print(json.dumps(result, indent=4))
 
 
 if __name__ =='__main__':
