@@ -1,4 +1,4 @@
-import os
+import os, glob
 from dotenv import load_dotenv
 from arango import ArangoClient
 from tqdm import tqdm
@@ -45,7 +45,7 @@ graph = None
 
 
 
-triplet_files = ["triplets.txt", "triplets1.txt", "triplets2.txt", "triplets3.txt"]
+TRIPLETS_DIR = os.path.join(os.path.dirname(__file__), "validated_amazon_triplets")
 
 def removeForbiddenChar(nodeKey):
 
@@ -446,9 +446,8 @@ def createKG():
     nodeSet = {"device","manufacturer","application","process","sensor","observation","inference","research","privacyPolicy","regulation"}
     edgeSet = {"developedBy","manufacturedBy","compatibleWith", "hasSensor","accessSensor","requiresSensor","performs","hasPolicy","statesInPolicy","captures","canInfer","showInference","references","hasTopic","follows","weight"}
 
-    for triplet_file in triplet_files:
-
-        triplets.extend(get_triplets(triplet_file))
+    for path in glob.glob(os.path.join(TRIPLETS_DIR, "*.txt")):
+        triplets.extend(get_triplets(path))
 
     triplets = set(triplets)
 
