@@ -1,5 +1,5 @@
-from browser import get_chrome_driver
-from proxy import working_proxy, local_access, url, MODULES
+from util.scraper.browser import get_chrome_driver
+from util.scraper.proxy import working_proxy, local_access, url, MODULES
 
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
