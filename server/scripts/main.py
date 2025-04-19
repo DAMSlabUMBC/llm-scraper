@@ -1,6 +1,5 @@
 import sys
 sys.dont_write_bytecode = True
-from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
@@ -8,6 +7,7 @@ from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
 
 from util.scraper.scrapping_manager import ScrappingManager
+from util.scraper.content_scraper import scrape_website
 
 import time
 import os
