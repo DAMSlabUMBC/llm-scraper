@@ -476,4 +476,3 @@ def createKG():
 
 if __name__ == "__main__":
     createKG()
-
