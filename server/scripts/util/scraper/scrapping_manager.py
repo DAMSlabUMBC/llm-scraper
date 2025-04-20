@@ -1,4 +1,4 @@
-from modules.amazon import Amazon
+from util.scraper.modules.amazon import Amazon
 import os
 from tqdm import tqdm
 import urllib.parse

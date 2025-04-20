@@ -1,4 +1,4 @@
-
+from util.scraper.browser import get_chrome_driver
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options

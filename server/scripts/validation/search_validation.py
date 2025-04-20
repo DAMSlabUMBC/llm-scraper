@@ -15,10 +15,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+
 import threading
 from urllib.parse import urlparse
 import time
 import re
+
+from dotenv import load_dotenv
+from arango import ArangoClient
 
 # Load environment variables
 load_dotenv()
@@ -209,28 +213,46 @@ def get_total_search_results(query):
     return -1
 
 def main():
+    client = ArangoClient(hosts='http://visionpc01.cs.umbc.edu:8529')
+    
+    db = client.db(
+        "_system",
+        username='root',
+        password='MdD5yiJ7sePXrbN5',
+    )
 
-    triplets = get_triplets("triplets.txt")
+    graph = db.graph("IoT_KG")
+    collection = graph.vertex_collection("manufacturer")
+    similar_node = []
+    for m in collection.all():
+        similar_node.append(m["name"])
+        # print(m["name"])
+    
+    # TODO: How do we decide which node to use? Random? Ranking? idk man
+    print(similar_node)
+    
 
-    for triplet in triplets[:2]:
-        query = format_triplet(triplet)
-        opposingQuery = format_opposing_triplet(triplet)
+    # triplets = get_triplets("triplets.txt")
 
-        normalResults = -1        
-        while(normalResults < 0):
-            normalResults = get_total_search_results(query)
+    # for triplet in triplets[:2]:
+    #     query = format_triplet(triplet)
+    #     opposingQuery = format_opposing_triplet(triplet)
 
-        opposingResults = -1
-        while(opposingResults < 0):
-            opposingResults = get_total_search_results(opposingQuery)
+    #     normalResults = -1        
+    #     while(normalResults < 0):
+    #         normalResults = get_total_search_results(query)
 
-        print(query)
-        print(opposingQuery)
-        print(normalResults)
-        print(opposingResults)
+    #     opposingResults = -1
+    #     while(opposingResults < 0):
+    #         opposingResults = get_total_search_results(opposingQuery)
 
-        weight = (normalResults + opposingResults) / 2
-        print(weight)
+    #     print(query)
+    #     print(opposingQuery)
+    #     print(normalResults)
+    #     print(opposingResults)
+
+    #     weight = (normalResults + opposingResults) / 2
+    #     print(weight)
 
 if __name__ == "__main__":
     main()

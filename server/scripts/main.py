@@ -1,23 +1,19 @@
-
 import sys
 sys.dont_write_bytecode = True
-from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from util.llm_utils.response_cleaner import parse_string_to_list
-#from KG import createKG
+from KG import createKG
 
-
-#from util.scraper.scrapping_manager import ScrappingManager
-from util.server.client import read_files_in_batches, create_sftp_client
+from util.scraper.scrapping_manager import ScrappingManager
+from util.scraper.content_scraper import scrape_website
 
 import time
 import os
 import logging
 import argparse
 from tqdm import tqdm
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -33,17 +29,6 @@ AmazonModule = "Amazon"
 RETRIES = 3
 
 def main():
-
-    host = os.getenv("HOST_URL")             # Server address
-    port = 22                                # Default SFTP port
-    username = os.getenv("USERNAME")         # Server username
-    password = os.getenv("PASSWORD")         # Server password
-    remote_dest_dir = f"/home/{username}/amazon_htmls"
-    print(host, username, password, remote_dest_dir)
-
-    # Create the SFTP connection
-    sftp, transport = create_sftp_client(host, port, username, password)
-
     
     html = ""
     text_result = {"entities": []}
@@ -88,8 +73,6 @@ def main():
     
     # gets all the html code in a specific batch
     entries = list(os.scandir(batch_folder))
-    # update entries to come from server
-    #entries = list(read_files_in_batches(sftp, remote_dest_dir))
     
     # iterates through each html file
     for i in tqdm(range(len(entries))):
@@ -98,8 +81,7 @@ def main():
             html = f.read()
             
         # scrapes the text, images, code, and video contents
-        text_content, image_content, code_content, video_content, url = scrape_website(html, AmazonModule)
-
+        text_content, image_content, code_content, video_content = scrape_website(html, AmazonModule)
 
         if text_content == "" and image_content == "" and code_content == "" and video_content == "":
             exit()
@@ -107,15 +89,6 @@ def main():
         if text_content == "{'name': None, 'manufacturer': None, 'details': ''}":
             logging.error(f"Error extracting contents from {entries[i]}")
             continue
-
-        # print(f"TEXT CONTENT: {text_content}")
-        # print(f"IMAGE CONTENT: {image_content}")
-        # print(f"CODE CONTENT: {code_content}")
-        # print(f"VIDEO CONTENT: {video_content}")
-        # print(f"URL: {url}")
-        # print(f"DATETIME: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
-
-        # continue
 
         # extracts text entities if there's text content
         if text_content != "{'name': None, 'manufacturer': None, 'details': ''}":
@@ -179,14 +152,13 @@ def main():
 
         for triplet in result_list:
             default_weight = 0.5
-            #triplets_list.append(str(triplet + (default_weight,)))
-            triplets_list.append(f"{triplet} {default_weight} {url} {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+            triplets_list.append(str(triplet + (default_weight,)))
         
         # appends the triplets into designated triplet file
         with open(output, "a") as file:
             for triplet in triplets_list:
                 file.writelines(str(triplet))
-                file.write("\n") 
+                file.write("\n")
                 
     end_time = time.time()
     
