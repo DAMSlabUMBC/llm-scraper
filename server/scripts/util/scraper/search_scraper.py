@@ -1,4 +1,4 @@
-from browser import get_chrome_driver
+from util.scraper.browser import get_chrome_driver
 
 import re
 import time

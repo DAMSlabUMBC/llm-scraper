@@ -1,6 +1,5 @@
 import sys
 sys.dont_write_bytecode = True
-from scraping import scrape_website
 from analysis.image_analysis import analyze_image_elements
 from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
@@ -8,7 +7,7 @@ from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
 
 from util.scraper.scrapping_manager import ScrappingManager
-from util.server.client import read_files_in_batches, create_sftp_client
+from util.scraper.content_scraper import scrape_website
 
 import time
 import os
@@ -30,17 +29,6 @@ AmazonModule = "Amazon"
 RETRIES = 3
 
 def main():
-
-    host = os.getenv("HOST_URL")             # Server address
-    port = 22                                # Default SFTP port
-    username = os.getenv("USERNAME")         # Server username
-    password = os.getenv("PASSWORD")         # Server password
-    remote_dest_dir = f"/home/{username}/amazon_htmls"
-    print(host, username, password, remote_dest_dir)
-
-    # Create the SFTP connection
-    sftp, transport = create_sftp_client(host, port, username, password)
-
     
     html = ""
     text_result = {"entities": []}
@@ -85,8 +73,6 @@ def main():
     
     # gets all the html code in a specific batch
     entries = list(os.scandir(batch_folder))
-    # update entries to come from server
-    entries = list(read_files_in_batches(sftp, remote_dest_dir))
     
     # iterates through each html file
     for i in tqdm(range(len(entries))):

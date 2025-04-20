@@ -15,14 +15,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+
 import threading
 from urllib.parse import urlparse
 import time
 import re
 
+from dotenv import load_dotenv
+from arango import ArangoClient
+
 # Load environment variables
 load_dotenv()
-
 
 def get_triplets(filename):
 
@@ -45,51 +48,76 @@ def format_triplet(triplet):
     ('device', 'Govee Smart LED Light Bars') performs ('process', 'location tracking')
     → "Govee Smart LED Light Bars performs location tracking"
     """
-    subject, predicate, obj = triplet
-    if predicate == 'developedBy':
-        predicate = 'is developed by'
-        return f"{subject[1]} {predicate} {obj[1]}"
-    elif predicate == 'manufacturedBy':
-        predicate = 'manufactures'
-        return f"{obj[1]} {predicate} {subject[1]}"
-    elif predicate == 'compatibleWith':
-        predicate = 'is compatible with'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasSensor':
-        predicate = 'has'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'accessSensor':
-        predicate = "can access"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'requiresSensor':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'performs':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasPolicy':
-        predicate = 'has policy'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'statesInPolicy':
-        predicate = 'states that there is'
-        return f"{obj[1]} {predicate} {subject[1]}" 
-    elif predicate == 'captures':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'canInfer':
-        predicate = 'can infer'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'showInference':
-        predicate = 'show inference'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'references':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasTopic':
-        predicate = "has topic"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'follows':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    else:
-        print("Error in search validation: Invalid relationship.")
+    # Unpack the triple into its components.
+    (subject_type, subject_value), predicate, (object_type, object_value) = triplet
+    variants = []
     
-    return "" 
+    if predicate == 'hasSensor' and subject_type == 'device' and object_type == 'sensor':
+        variants = [
+            f"{subject_value} has {object_value}",
+            f"{subject_value} is equipped with {object_value}",
+            f"{object_value} is part of {subject_value}",
+            f"{subject_value} comes with {object_value}",
+            f"{subject_value} features {object_value}"
+        ]
+    elif predicate == 'manufacturedBy' and subject_type == 'device' and object_type == 'manufacturer':
+        variants = [
+            f"{subject_value} is manufactured by {object_value}",
+            f"{subject_value} is produced by {object_value}",
+            f"{subject_value} comes from {object_value}",
+            f"{object_value} manufactures {subject_value}",
+            f"{subject_value} is built by {object_value}"
+        ]
+    elif predicate == 'compatibleWith':
+        variants = [
+            f"{subject_value} is compatible with {object_value}",
+            f"{subject_value} works with {object_value}",
+            f"{object_value} is supported by {subject_value}",
+            f"{subject_value} pairs with {object_value}",
+            f"{subject_value} integrates well with {object_value}"
+        ]
+    elif predicate == 'performs' and subject_type == 'device' and object_type == 'process':
+        variants = [
+            f"{subject_value} performs {object_value}",
+            f"{subject_value} carries out {object_value}",
+            f"{subject_value} executes {object_value}",
+            f"{subject_value} completes {object_value}",
+            f"{subject_value} undertakes {object_value}"
+        ]
+    elif predicate == 'hasPolicy':
+        variants = [
+            f"{subject_value} has policy {object_value}",
+            f"{subject_value} adopts the {object_value} policy",
+            f"{subject_value} follows the {object_value} policy",
+            f"{subject_value} implements the {object_value} policy",
+            f"{subject_value} operates under the {object_value} policy"
+        ]
+    elif predicate == 'statesInPolicy' and object_type == 'privacyPolicy':
+        variants = [
+            f"{subject_value} is stated in policy {object_value}",
+            f"Policy {object_value} specifies {subject_value}",
+            f"Policy {object_value} outlines {subject_value}",
+            f"{subject_value} is mentioned in policy {object_value}",
+            f"{subject_value} is detailed in policy {object_value}"
+        ]
+    elif predicate == 'follows' and subject_type == 'privacyPolicy' and object_type == 'regulation':
+        variants = [
+            f"{subject_value} follows {object_value}",
+            f"{subject_value} adheres to {object_value}",
+            f"{subject_value} complies with {object_value}",
+            f"{subject_value} upholds {object_value}",
+            f"{subject_value} observes {object_value}"
+        ]
+    elif predicate == 'developedBy' and subject_type == 'application' and object_type == 'manufacturer':
+        variants = [
+            f"{subject_value} is developed by {object_value}",
+            f"{object_value} develops {subject_value}",
+            f"{subject_value} is created by {object_value}",
+            f"{subject_value} is engineered by {object_value}",
+            f"{subject_value} is built under the guidance of {object_value}"
+        ]
+
+    return variants
 
 def format_opposing_triplet(triplet):
     """
@@ -185,28 +213,46 @@ def get_total_search_results(query):
     return -1
 
 def main():
+    client = ArangoClient(hosts='http://visionpc01.cs.umbc.edu:8529')
+    
+    db = client.db(
+        "_system",
+        username='root',
+        password='MdD5yiJ7sePXrbN5',
+    )
 
-    triplets = get_triplets("triplets.txt")
+    graph = db.graph("IoT_KG")
+    collection = graph.vertex_collection("manufacturer")
+    similar_node = []
+    for m in collection.all():
+        similar_node.append(m["name"])
+        # print(m["name"])
+    
+    # TODO: How do we decide which node to use? Random? Ranking? idk man
+    print(similar_node)
+    
 
-    for triplet in triplets[:2]:
-        query = format_triplet(triplet)
-        opposingQuery = format_opposing_triplet(triplet)
+    # triplets = get_triplets("triplets.txt")
 
-        normalResults = -1        
-        while(normalResults < 0):
-            normalResults = get_total_search_results(query)
+    # for triplet in triplets[:2]:
+    #     query = format_triplet(triplet)
+    #     opposingQuery = format_opposing_triplet(triplet)
 
-        opposingResults = -1
-        while(opposingResults < 0):
-            opposingResults = get_total_search_results(opposingQuery)
+    #     normalResults = -1        
+    #     while(normalResults < 0):
+    #         normalResults = get_total_search_results(query)
 
-        print(query)
-        print(opposingQuery)
-        print(normalResults)
-        print(opposingResults)
+    #     opposingResults = -1
+    #     while(opposingResults < 0):
+    #         opposingResults = get_total_search_results(opposingQuery)
 
-        weight = (normalResults + opposingResults) / 2
-        print(weight)
+    #     print(query)
+    #     print(opposingQuery)
+    #     print(normalResults)
+    #     print(opposingResults)
+
+    #     weight = (normalResults + opposingResults) / 2
+    #     print(weight)
 
 if __name__ == "__main__":
     main()

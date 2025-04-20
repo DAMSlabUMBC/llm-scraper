@@ -1,4 +1,4 @@
-from browser import get_chrome_driver
+from util.scraper.browser import get_chrome_driver
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -9,6 +9,11 @@ from bs4 import BeautifulSoup
 import cloudscraper
 import requests
 import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '/home/gsantos2/gia_ada/llm-scraper/server/scripts/util/scraper'))
+
+from browser import get_chrome_driver
 
 
 class Amazon():
@@ -151,7 +156,8 @@ class Amazon():
         url = soup.find("link", {"rel": "canonical"})
         if url != None:
             url = url["href"]
-    
+        else:
+            url = ""
         # turns it into a product of the necessary format
         product = {
             "name": name,
@@ -159,4 +165,4 @@ class Amazon():
             "details": details
         }
         
-        return str(product)
+        return str(product), url
