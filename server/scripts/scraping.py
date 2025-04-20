@@ -1,10 +1,10 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+#from selenium import webdriver
+#from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from util.folder_manager import create_folder
-from util.content_saver import save_content, save_links
+#from util.folder_manager import create_folder
+#from util.content_saver import save_content, save_links
 #from util.media_downloader import ffmpeg_support
 import json
 import re
@@ -12,7 +12,7 @@ import threading
 import requests
 from queue import Queue
 import cloudscraper
-from url_extraction.modules.Amazon import Amazon
+from util.scraper.modules.amazon import Amazon
 import time
 
 
@@ -230,11 +230,11 @@ def scrape_website(html, moduleName):
     #soup = BeautifulSoup(html, 'html.parser')
     
     # Create a dynamic folder based on the URL's hostname
-    subfolder = create_folder(html)
+    #subfolder = create_folder(html)
     
     # Extract and text content based on given module
     print('[✅] Extracting Text')
-    text_content = module.parseProducts(soup)
+    text_content, url = module.parseProducts(soup)
 
     # Extract and serialize the text content of code elements
     print('[✅] Extracting Code')
@@ -279,7 +279,7 @@ def scrape_website(html, moduleName):
 
     print('[💆‍♂️] Video Content Baby: ', video_content)
 
-    return text_content, image_content, code_content, video_content
+    return text_content, image_content, code_content, video_content, url
 
 def preprocess(text_content):
     parsed_lines = []

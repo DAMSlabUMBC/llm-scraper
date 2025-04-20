@@ -1,27 +1,57 @@
 #!/bin/bash
 
+#SBATCH --cluster=chip-gpu
+#SBATCH --account=pi_ryus
+#SBATCH --partition=gpu
 #SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
-#SBATCH --array=1-50                        # Run array tasks 0..999 (i.e. 1000 tasks)
+#SBATCH --array=2-37                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
 #SBATCH --mem=150000                        # Memory allocation in MB (150 GB)
 #SBATCH --time=72:00:00                     # Maximum runtime for the job (70 hours)
-#SBATCH --constraint=rtx_8000               # Specific hardware constraint
+#SBATCH --constraint=L40S               # Specific hardware constraint
 #SBATCH --gres=gpu:1                        # Request 4 GPU for the job
 #SBATCH --output=llm-scraper_output/llm-scraper_%A_%a.out       # Output log (include %A for job ID, %a for array index)
 #SBATCH --error=llm-scraper_error/llm-scraper_%A_%a.err        # Error log
 
 echo "SLURM job started at $(date)"
-echo "Array Task ID: $SLURM_ARRAY_TASK_ID"
+echo "Array Task ID: ${SLURM_ARRAY_TASK_ID}"
 
 # load necessary modules
-module load ollama
+#module load python/3.12.4
+module load ollama/0.6.5
+echo "loaded all necessary modules"
+
+#source /home/gsantos2/gia_ada/llm-scraper/env/bin/activate
+# echo "activated python environment"
+
+# pip install -r /home/gsantos2/gia_ada/llm-scraper/server/requirements.txt
+# echo "installed all requirements"
+
+# pip install fake-useragent
+# pip install bs4
+
+# pip list
+# pip show fake-useragent
+
+# echo "testing which python"
+# which python
+
+# echo "testing which pip"
+# which pip
+
 
 # (Optional) pip install commands
 #pip install --user pandas tqdm ollama
+#echo "all available conda environments"
+#conda list
 
 # activate conda environment
+conda init
+source ~/.bashrc
 conda activate test_env2
+
+conda list
 
 sleep 10 # Wait 10 seconds to ensure conda environment has been activated
 
@@ -30,7 +60,7 @@ PORT="$((11434 + SLURM_ARRAY_TASK_ID))"
 export PORT
 echo "Starting Ollama server on port ${PORT}..."
 
-export OLLAMA_TMPDIR=/nfs/ada/ryus/users/gsantos2/ollama/ollama_tmp # Temporary directory for Ollama
+export OLLAMA_TMPDIR=/umbc/ada/ryus/users/gsantos2/ollama/ollama_tmp # Temporary directory for Ollama
 export OLLAMA_HOST="0.0.0.0:"
 OLLAMA_HOST+="${PORT}"
 echo "PORT=${PORT}"
@@ -53,8 +83,8 @@ ollama pull llava:34b
 echo "Model pulling complete. Starting Python script execution..."
 
 # Changing Python path to have the correct version
-echo 'export PATH=/home/gsantos2/.conda/envs/test_env2/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
+#echo 'export PATH=/home/gsantos2/.conda/envs/test_env2/bin:$PATH' >> ~/.bashrc
+#source ~/.bashrc
 
 # Checking Python version
 python --version
@@ -67,7 +97,7 @@ sleep 10
 # Use python to run queries
 python main.py \
   --input_folder="amazon_batches/batch_${SLURM_ARRAY_TASK_ID}" \
-  --output_file="amazon_triplets/triplets_${SLURM_ARRAY_TASK_ID}" \
+  --output_file="amazon_triplets/new_triplets_${SLURM_ARRAY_TASK_ID}.txt" \
   --ollama_port="${PORT}"
 
 echo "Python script done for task ${SLURM_ARRAY_TASK_ID}."
