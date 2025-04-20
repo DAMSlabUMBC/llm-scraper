@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+si
+=======
 #!/bin/bash
 
 #SBATCH --cluster=chip-gpu
@@ -108,3 +111,4 @@ echo "Python script done for task ${SLURM_ARRAY_TASK_ID}."
 # lsof -ti tcp:${PORT} | xargs -r kill -9
 
 echo "SLURM job completed at $(date)"
+>>>>>>> 76fb7410ba2708364783cc0bc8eaf8c4cf304386

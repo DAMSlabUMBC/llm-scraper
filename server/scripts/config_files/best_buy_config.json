@@ -1,0 +1,8 @@
+{
+    "home_url": "https://www.bestbuy.com/",
+    "search_bar": "input#gh-search-input.search-input.search-input-default",
+    "product_urls": "h4.sku-title a",
+    "next": "a.sku-list-page-next",
+    "temp_urls": "bestbuy_urls.txt",
+    "official_urls": "official_best_buy_urls.txt"
+}

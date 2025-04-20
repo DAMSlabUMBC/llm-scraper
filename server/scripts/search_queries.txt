@@ -5,6 +5,7 @@ smart plugs
 smart switches
 smart security systems
 smart appliances
+smart clock
 fitness trackers
 smart watches
 healthcare wearables
