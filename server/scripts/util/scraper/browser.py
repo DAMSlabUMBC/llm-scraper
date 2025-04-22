@@ -18,17 +18,17 @@ def get_chrome_driver(headless=True, use_proxy=None):
     options = Options()
     if headless:
         options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument('--disable-blink-features=AutomationControlled')
+    # options.add_argument("--no-sandbox")
+    # options.add_argument("--disable-dev-shm-usage")
+    # options.add_argument('--disable-blink-features=AutomationControlled')
 
-    if chrome_path := os.getenv('CHROME_PATH'):
-        options.binary_location = chrome_path
+    # if chrome_path := os.getenv('CHROME_PATH'):
+    #     options.binary_location = chrome_path
 
-    fake_useragent = UserAgent()
-    options.add_argument(f'user-agent={fake_useragent.random}')
+    # fake_useragent = UserAgent()
+    # options.add_argument(f'user-agent={fake_useragent.random}')
     
-    if use_proxy:
-        options.add_argument(f'--proxy-server={use_proxy}')
+    # if use_proxy:
+    #     options.add_argument(f'--proxy-server={use_proxy}')
     
     return webdriver.Chrome(options=options)
