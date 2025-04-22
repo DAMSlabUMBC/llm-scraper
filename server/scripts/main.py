@@ -100,10 +100,11 @@ def main():
         #print(f"HTML {entries[i]}")
         # with open(entries[i], "r") as f:
         #     html = f.read()
+        url = url.strip()
             
         # scrapes the text, images, code, and video contents
         #text_content, image_content, code_content, video_content = scrape_website(url, AmazonModule)
-        text_content = scrape_website(url.strip(), configs)
+        text_content = scrape_website(url, configs)
 
         #if text_content == "" and image_content == "" and code_content == "" and video_content == "":
         if text_content == "":
