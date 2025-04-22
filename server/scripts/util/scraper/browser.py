@@ -17,10 +17,15 @@ def get_chrome_driver(headless=True, use_proxy=None):
 
     options = Options()
     if headless:
-        options.add_argument("--headless")
+        options.add_argument("--headless=new")
     # options.add_argument("--no-sandbox")
     # options.add_argument("--disable-dev-shm-usage")
     # options.add_argument('--disable-blink-features=AutomationControlled')
+
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080")
 
     # if chrome_path := os.getenv('CHROME_PATH'):
     #     options.binary_location = chrome_path

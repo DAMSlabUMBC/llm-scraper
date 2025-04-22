@@ -18,7 +18,14 @@ def scrape_website(url, configs):
 
     # Setup headless Chrome
     driver = get_chrome_driver()
-    driver.get(url)
+    try:
+        driver.get(url)
+    except TimeoutException:
+        print(f"Timeout loading {url}")
+        driver.quit()
+        driver = get_chrome_driver()  # reinitialize
+        driver.get(url)
+
 
     text = {}
 
