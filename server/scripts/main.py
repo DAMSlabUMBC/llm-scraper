@@ -155,6 +155,7 @@ def main():
         
         print("Entities:",entities)
 
+        
 
         result_list = None
 
@@ -178,7 +179,7 @@ def main():
 
         for triplet in result_list:
             default_weight = 0.5
-            triplets_list.append(str(triplet + (default_weight,)))
+            triplets_list.append(f"{triplet} {default_weight} {url}")
         
         # appends the triplets into designated triplet file
         with open(output, "a") as file:
