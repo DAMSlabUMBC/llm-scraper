@@ -20,5 +20,6 @@
             }
         }
     },
-    "triplets_file": "bestbuy_triplets.txt"
+    "triplets_file": "bestbuy_triplets.txt",
+    "extracted_file": "extracted_bestbuy.txt"
 }

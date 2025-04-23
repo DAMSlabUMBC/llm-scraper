@@ -1,47 +1,37 @@
-smart speakers
-smart thermostats
-smart lighting
 smart plugs
+smart outlets
+smart light bulbs 
 smart switches
-smart security systems
+smart dimmers
+smart thermostats
+smart locks
+video doorbells
+smart cameras
+smart home hubs
+smart garage door openers
+smart sensors
+smart speakers
+smart displays
+smart TVs
+streaming devices
+smart projectors
+robot vacuums
+smart air purifiers
+smart humidifiers
+smart dehumidifiers
+smart ovens
+smart microwaves
+smart refigerators
 smart appliances
-smart clock
+smart coffee makers
+OBD-II Smart diagnostic devices
+smart dash cams
+GPS trackers
+smartwatches
 fitness trackers
-smart watches
-healthcare wearables
-AR/VR devices
-industrial sensors
-smart manufacturing devices
-asset tracking devices
-predictive maintenance devices
-smart energy meters
-remote patient monitoring devices
-smart insulin pens
-wearable ECG monitors
-wearable EKG monitors
-IoMT implants
-telemedicine devices
-connected cars
-vehicle telematics devices
-smart traffic signals
-fleet management devices
-smart meters
-connected streetlights
-public wifi nodes
-environmental monitoring sensors
-smart waste management systems
-smart irrigation systems
-drones for agriculture
-livestock monitoring devices
-weather monitoring systems
-beacon technology
-smart vending machines
-inventory tracking sensors
-smart tvs
-gaming consoles
-IoT cameras
-solar monitoring systems
-battery management systems
-flood sensors
-earthquake sensors
-wildfire detection systems
+smart scales
+smart blood pressure monitors
+thermometers with Bluetooth/Wi-Fi
+smart sprinkler controllers
+smart weather stations
+outdoor smart cameras and lighting

@@ -2,7 +2,7 @@
     "home_url": "https://www.walmart.com/",
     "search_bar": "input.flex-auto.lh-solid.sans-serif.search-bar.br-pill.f5.b--none.search-bar-redesigned-v2",
     "product_urls": "a.w-100.h-100.z-1.hide-sibling-opacity.absolute",
-    "next": "a.sans-serif.ph1.pv2.w4.h4.border-box.bg-white.br-100.b--solid.ba.mh2-m.db.tc.no-underline.b--light-gray",
+    "next": "link",
     "temp_urls": "walmart_urls.txt",
     "official_urls": "official_walmart_urls.txt",
     "text": {
