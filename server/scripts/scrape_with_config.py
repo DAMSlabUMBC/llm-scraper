@@ -1,88 +1,81 @@
 import argparse
 import os
 import json
-#import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, NoSuchElementException
 import time
 from tqdm import tqdm
 from util.scraper.browser import get_chrome_driver
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
 
 CONFIGS_FOLDER = "config_files"
 
 def scrape_website(url, configs):
 
-    # Setup headless Chrome
-    driver = get_chrome_driver()
-    try:
-        driver.get(url)
-    except TimeoutException:
-        print(f"Timeout loading {url}")
-        driver.quit()
-        driver = get_chrome_driver()  # reinitialize
-        driver.get(url)
-
-
     text = {}
 
+    # opens playwright driver for scraping
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
 
-    print(f"URL {url}")
-    for tag in configs["text"]:
-        if tag != "buttons":
-            try:
+        try:
+            page.goto(url, timeout=120_000, wait_until="domcontentloaded")  # 120 seconds
+        except PlaywrightTimeout:
+            print(f"⚠️ Timeout loading {url}")
+            browser.close()
+            return str(text)
+
+        print(f"URL {url}")
+        # scrapes from text
+        for tag in configs["text"]:
+            if tag != "buttons":
                 content = None
                 if isinstance(configs["text"][tag], list):
-                    for name_tag in configs["text"][tag]:
+                    for selector in configs["text"][tag]:
                         try:
-                            print(f"Trying selector: {name_tag}")
-                            content = driver.find_element(By.CSS_SELECTOR, name_tag).text
-                            print(f"Found selector: {name_tag}")
-                            break
-                        except NoSuchElementException:
-                            print(f"Not found selector: {name_tag}")
+                            print(f"Trying selector: {selector}")
+                            element = page.locator(selector)
+                            if element.count() > 0:
+                                content = element.first.text_content()
+                                print(f"Found selector: {selector}")
+                                break
+                        except Exception as e:
+                            print(f"Not found selector: {selector}")
                             continue
                 else:
                     try:
-                        content = driver.find_element(By.CSS_SELECTOR, configs["text"][tag]).text
-                    except NoSuchElementException:
+                        content = page.locator(configs["text"][tag]).first.text_content()
+                    except Exception:
                         content = None
 
                 if content:
-                    text[tag] = "|".join(content.split("\n"))
+                    text[tag] = "|".join(content.strip().split("\n"))
                 else:
                     print(f"No content found for tag: {tag}")
 
-            except Exception as e:
-                print(f"Error while processing tag '{tag}': {e}")
+        # clicks buttons to extract more text
+        if "buttons" in configs["text"]:
+            for button in configs["text"]["buttons"]:
+                for button_selector, content_selector in configs["text"]["buttons"][button].items():
+                    try:
+                        button_elem = page.locator(button_selector)
+                        button_elem.scroll_into_view_if_needed()
+                        time.sleep(1)
+                        button_elem.click()
+                        time.sleep(3)
+                        content = page.locator(content_selector).first.text_content()
+                        if content:
+                            text[button] = "|".join(content.strip().split("\n"))
+                    except Exception as e:
+                        print(f"Could not click or extract for button '{button}': {e}")
 
-    if "buttons" in configs["text"]:
-        for button in configs["text"]["buttons"]:
-            for xbutton in configs["text"]["buttons"][button]:
-                button_selector = xbutton
-                content_selector = configs["text"]["buttons"][button][xbutton]
-                try:
-                    button_element = driver.find_element(By.CSS_SELECTOR, button_selector)
-                    driver.execute_script("arguments[0].scrollIntoView(true);", button_element)
-                    time.sleep(5)
-                    button_element.click()
-                    time.sleep(5)  # Optional wait
-                    content = driver.find_element(By.CSS_SELECTOR, content_selector).text
-                    text[button] = "|".join(content.split("\n"))
-                except Exception as e:
-                    print(f"Could not click or extract for button '{button}'")
+                    # reload the page
+                    page.goto(url, timeout=120_000, wait_until="domcontentloaded")
+                    time.sleep(2)
 
-            # reloads the page
-            driver.get(url)
-            time.sleep(5)
-    
-    driver.quit()
+        browser.close()
+        return str(text)
 
-    return str(text)
-
-        
-
-    

@@ -1,0 +1,5 @@
+(('device','Pro2WirelessController'),'manufacturedBy',('manufacturer','8BitDo')) 0.5 https://www.bestbuy.com/site/8bitdo-pro-2-wireless-controller-for-switch-windows-macos-and-android-gray/6475678.p?skuId=6475678
+(('device','Pro2WirelessController'),'compatibleWith',('application','Windows')) 0.5 https://www.bestbuy.com/site/8bitdo-pro-2-wireless-controller-for-switch-windows-macos-and-android-gray/6475678.p?skuId=6475678
+(('device','Pro2WirelessController'),'compatibleWith',('application','Mac')) 0.5 https://www.bestbuy.com/site/8bitdo-pro-2-wireless-controller-for-switch-windows-macos-and-android-gray/6475678.p?skuId=6475678
+(('device','Pro2WirelessController'),'compatibleWith',('application','Android')) 0.5 https://www.bestbuy.com/site/8bitdo-pro-2-wireless-controller-for-switch-windows-macos-and-android-gray/6475678.p?skuId=6475678
+(('device','Pro2WirelessController'),'compatibleWith',('device','NintendoSwitch')) 0.5 https://www.bestbuy.com/site/8bitdo-pro-2-wireless-controller-for-switch-windows-macos-and-android-gray/6475678.p?skuId=6475678

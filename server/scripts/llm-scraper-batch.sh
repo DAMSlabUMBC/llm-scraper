@@ -4,7 +4,7 @@
 #SBATCH --account=pi_ryus
 #SBATCH --partition=gpu
 #SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
-#SBATCH --array=2-37                       # Run array tasks 0..999 (i.e. 1000 tasks)
+#SBATCH --array=1-25                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
 #SBATCH --mem=150000                        # Memory allocation in MB (150 GB)
@@ -50,6 +50,7 @@ echo "loaded all necessary modules"
 conda init
 source ~/.bashrc
 conda activate test_env2
+pip list | grep playwright
 
 conda list
 
@@ -67,6 +68,10 @@ echo "PORT=${PORT}"
 echo "OLLAMA_HOST=${OLLAMA_HOST}"
 
 echo $OLLAMA_HOST
+
+# sets playwright
+export PLAYWRIGHT_BROWSERS_PATH=/umbc/ada/ryus/users/gsantos2/tools/playwright_browsers
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 # Start *this task's* Ollama server in the background, on a unique port
 # OLLAMA_TMPDIR=/nfs/ada/ryus/users/sbelon1/ollama_temp/ArrOll \  #this should be the path to your soft link
@@ -96,9 +101,11 @@ sleep 10
 
 # Use python to run queries
 python main.py \
-  --input_folder="amazon_batches/batch_${SLURM_ARRAY_TASK_ID}" \
-  --output_file="amazon_triplets/new_triplets_${SLURM_ARRAY_TASK_ID}.txt" \
-  --ollama_port="${PORT}"
+  --config_file="best_buy_config.json" \
+  --batch_file="bestbuy_batches/batch_${SLURM_ARRAY_TASK_ID}.txt" \
+  --output_file="bestbuy_triplets/triplets_${SLURM_ARRAY_TASK_ID}.txt"
+  -ollama_port="${PORT}"
+
 
 echo "Python script done for task ${SLURM_ARRAY_TASK_ID}."
 
