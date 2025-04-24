@@ -38,6 +38,7 @@ def analyze_text_elements(text_content):
                         - research
                         - privacy policy
                         - regulation
+                        - category
 
                         ### Output Rules:
                         - Output strictly in the JSON format: `{ "entities": [list of entities] }`

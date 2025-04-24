@@ -5,6 +5,7 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
+from datetime import datetime
 
 #from util.scraper.scrapping_manager import ScrappingManager
 #from util.scraper.content_scraper import scrape_website
@@ -146,7 +147,7 @@ def main():
 
         for triplet in result_list:
             default_weight = 0.5
-            triplets_list.append(f"{triplet} {default_weight} {url}")
+            triplets_list.append(f"{triplet} {default_weight} {url} {datetime.now()}")
         
         # appends the triplets into designated triplet file
         with open(output_file, "a") as file:
