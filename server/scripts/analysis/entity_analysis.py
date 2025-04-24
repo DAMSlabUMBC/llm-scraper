@@ -2,8 +2,11 @@ import ollama
 import torch
 import json
 from util.llm_utils.response_cleaner import extract_json, extract_python, remove_think_tags
+import re
 
 RETRIES = 3
+
+ENTITIES_PATTERN = r"^\{'entities': \[(?:'(?:[^']*)'(?:, )?)*\]\}$"
 
 def analyze_text_elements(text_content):
     entities_json = {"entities": []}
@@ -131,14 +134,18 @@ def analyze_text_elements(text_content):
             entities_json = None
 
         # checks if it in the desired format {'entities': [...]}
-        if isinstance(entities_json, dict):
+        """if isinstance(entities_json, dict):
             if isinstance(entities_json.get("entities"), list):
                 if len(entities_json.get("entities")) > 0:
                     if isinstance(entities_json.get("entities")[0], str):
                         break
                 else:
-                    break
-
+                    break"""
+        if re.match(ENTITIES_PATTERN, entities_json):
+            break
+        else:
+            entities_json = None
+            
     # entities json has an empty list of entities if it fails to generate entities for a number of retries
     if entities_json == None:
         entities_json = {"entities": []}
