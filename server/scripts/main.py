@@ -32,8 +32,11 @@ CONFIGS_FOLDER = "config_files"
 RETRIES = 3
 
 def main():
-    
-    html = ""
+    video_content = ""
+    code_content = "[]"
+    image_content = []
+    text_content = "{}"
+
     text_result = {"entities": []}
     image_result = {"entities": []}
     video_result = {"entities": []}
@@ -60,63 +63,52 @@ def main():
     with open(os.path.join(CONFIGS_FOLDER, config_file), 'r') as f:
         configs = json.load(f)
 
-    # gets the product_urls
+    # gets the product_urls from the batch
     with open(batch_file, "r") as f:
         product_urls = f.readlines()
 
-
-    
     start_time = time.time()
     
-    # gets all the html code in a specific batch
-    #entries = list(os.scandir(batch_folder))
-    #product_urls = product_urls[36:]
-    # iterates through each html file
+    # iterates through each url
     for url in tqdm(product_urls):
-        #print(f"HTML {entries[i]}")
-        # with open(entries[i], "r") as f:
-        #     html = f.read()
+
         url = url.strip()
             
         # scrapes the text, images, code, and video contents
         #text_content, image_content, code_content, video_content = scrape_website(url, AmazonModule)
         text_content = scrape_website(url, configs)
 
-        #if text_content == "" and image_content == "" and code_content == "" and video_content == "":
-        if text_content == "":
-            exit()
-
-        if text_content == "{'name': None, 'manufacturer': None, 'details': ''}":
+        if text_content == "{}":
             logging.error(f"Error extracting contents from {url}")
             continue
 
         print(text_content)
         
         # extracts text entities if there's text content
-        if text_content != "{'name': None, 'manufacturer': None, 'details': ''}":
+        if text_content != "{}":
             text_result = analyze_text_elements(text_content)
             print("finished text")
         
-        # # extracts video entities if there's video content
-        # if video_content != "":
-        #     video_result = analyze_text_elements(video_content)
-        #     print("finished video")
+        # extracts video entities if there's video content
+        if video_content != "":
+            video_result = analyze_text_elements(video_content)
+            print("finished video")
 
-        # # extracts code entities if there's code content
-        # if code_content != "[]":
-        #     code_result = analyze_text_elements(code_content)
-        #     print("finished code")
+        # extracts code entities if there's code content
+        if code_content != "[]":
+            code_result = analyze_text_elements(code_content)
+            print("finished code")
 
-        # # extracts image entities if there's image content
-        # if image_content != []:
-        #     image_result = analyze_image_elements(image_content)
-        #     print("finished images")
+        # extracts image entities if there's image content
+        if image_content != []:
+            image_result = analyze_image_elements(image_content)
+            print("finished images")
         
         print("\n=== Analysis Results ===")
         print("Text Analysis:", text_result)
-        # print("Code Analysis:", code_result)
-        # print("Video Analysis:", video_result)
-        # print("Image Analysis:", image_result)
+        print("Code Analysis:", code_result)
+        print("Video Analysis:", video_result)
+        print("Image Analysis:", image_result)
         print("=====================\n")
         
 
@@ -126,13 +118,11 @@ def main():
 
         # adds all text, image, video, and code entities in a single set of entities
         entities["entities"].update(text_result["entities"])
-        # entities["entities"].update(video_result["entities"])
-        # entities["entities"].update(image_result["entities"])
-        # entities["entities"].update(code_result["entities"])
+        entities["entities"].update(video_result["entities"])
+        entities["entities"].update(image_result["entities"])
+        entities["entities"].update(code_result["entities"])
         
         print("Entities:",entities)
-
-        
 
         result_list = None
 
