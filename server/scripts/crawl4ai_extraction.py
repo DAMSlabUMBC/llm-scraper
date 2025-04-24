@@ -74,14 +74,8 @@ Rating: {product.get("rating")}
 Image URL: {product.get("image")}
 
 ### Example Outputs:
-
-**Example 1:**
-Input: "Amazon Echo Dot, With Alexa, Charcoal."
-Output:
-{{"entities": ["Amazon", "Alexa", "Amazon Echo Dot", "Speaker", "voice assistant"]}}
-
-**Example 2:**
-Input: "There are no entities here."
+**Example:**
+Input: ""
 Output:
 {{"entities": []}}
 """
