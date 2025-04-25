@@ -174,6 +174,12 @@ def format_opposing_triplet(triplet):
 
     for doc in tops:
         print(doc["name"], "→", doc["count"], "devices")
+
+        if doc["name"] == subject[1] or doc["name"] == obj[1]:
+            continue
+        if len(result) >= 3:
+            break
+
         if choice == "subject":
             subject[1] = doc["name"]
         else:
@@ -186,15 +192,14 @@ def format_opposing_triplet(triplet):
     print("✅ FINAL: ",result)
     return result
 
-def get_total_search_results(query):
+def get_total_search_results(driver, query):
     """
     Uses selenium to search for the query and grabs the 'result-stats' id tag that
     Google uses to provide an approximate number of search results
     """
     
-    driver = get_chrome_driver()
     driver.get('https://www.google.com')
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 10)
 
     search = driver.find_element("name", "q")
     search.send_keys(query)
@@ -215,45 +220,49 @@ def get_total_search_results(query):
     
     except Exception as e:
         print("Error: result-stats not found or empty.", e)
-    driver.quit()
     return -1
 
 def main():
 
-    triplets = get_triplets("triplets.txt")
+    driver = get_chrome_driver()
 
-    for triplet in triplets[:1]:
-        query = format_triplet(triplet)
-        opposingQuery = format_opposing_triplet(triplet)
+    try:
+        triplets = get_triplets("triplets.txt")
 
-        print(query)
-        print(opposingQuery)
+        for triplet in triplets[:1]:
+            query = format_triplet(triplet)
+            opposingQuery = format_opposing_triplet(triplet)
 
-        normalResults = 0        
-        opposingResults = 0
-        totalResults = 0;
+            print(query)
+            print(opposingQuery)
 
-        for q in query:
-            result = get_total_search_results(q)
-            if result > normalResults:
-                normalResults = result
-            print("Top normal result: ", normalResults)
-            totalResults += result
+            normalResults = 0        
+            opposingResults = 0
+            totalResults = 0;
 
-        for set in opposingQuery:
-            for q in set:
-                result = get_total_search_results(q)
-                if result > opposingResults:
-                    opposingResults = result
-                print("Top opposing result: ", opposingResults)
+            for q in query:
+                result = get_total_search_results(driver, q)
+                if result > normalResults:
+                    normalResults = result
+                print("Top normal result: ", normalResults)
                 totalResults += result
-            
-        
-        print(normalResults)
-        print(opposingResults)
 
-        weight = normalResults / (normalResults + opposingResults)
-        print(weight)
+            for set in opposingQuery:
+                for q in set:
+                    result = get_total_search_results(driver, q)
+                    if result > opposingResults:
+                        opposingResults = result
+                    print("Top opposing result: ", opposingResults)
+                    totalResults += result
+                
+            
+            print(normalResults)
+            print(opposingResults)
+
+            weight = normalResults / (normalResults + opposingResults)
+            print(weight)
+    finally:
+        driver.quit()
 
 if __name__ == "__main__":
     main()
