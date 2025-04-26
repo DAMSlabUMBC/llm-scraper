@@ -135,14 +135,15 @@ def analyze_text_elements(text_content):
             entities_json = None
 
         # checks if it in the desired format {'entities': [...]}
-        """if isinstance(entities_json, dict):
+        if isinstance(entities_json, dict):
             if isinstance(entities_json.get("entities"), list):
                 if len(entities_json.get("entities")) > 0:
                     if isinstance(entities_json.get("entities")[0], str):
                         break
                 else:
-                    break"""
-        if re.match(ENTITIES_PATTERN, entities_json):
+                    break
+
+        if re.match(ENTITIES_PATTERN, str(entities_json)):
             break
         else:
             entities_json = None
