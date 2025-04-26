@@ -30,11 +30,11 @@ def scrape_website(url, configs):
 
         print(f"URL {url}")
         # scrapes from text
-        for tag in configs["text"]:
+        for tag in configs["text_content"]:
             if tag != "buttons":
                 content = None
-                if isinstance(configs["text"][tag], list):
-                    for selector in configs["text"][tag]:
+                if isinstance(configs["text_content"][tag], list):
+                    for selector in configs["text_content"][tag]:
                         try:
                             print(f"Trying selector: {selector}")
                             element = page.locator(selector)
@@ -47,7 +47,7 @@ def scrape_website(url, configs):
                             continue
                 else:
                     try:
-                        content = page.locator(configs["text"][tag]).first.text_content()
+                        content = page.locator(configs["text_content"][tag]).first.text_content()
                     except Exception:
                         content = None
 
@@ -57,9 +57,9 @@ def scrape_website(url, configs):
                     print(f"No content found for tag: {tag}")
 
         # clicks buttons to extract more text
-        if "buttons" in configs["text"]:
-            for button in configs["text"]["buttons"]:
-                for button_selector, content_selector in configs["text"]["buttons"][button].items():
+        if "buttons" in configs["text_content"]:
+            for button in configs["text_content"]["buttons"]:
+                for button_selector, content_selector in configs["text_content"]["buttons"][button].items():
                     try:
                         button_elem = page.locator(button_selector)
                         button_elem.scroll_into_view_if_needed()
