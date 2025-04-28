@@ -5,15 +5,18 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from util.llm_utils.response_cleaner import parse_string_to_list
 from KG import createKG
+from datetime import datetime
 
-from util.scraper.scrapping_manager import ScrappingManager
-from util.scraper.content_scraper import scrape_website
+#from util.scraper.scrapping_manager import ScrappingManager
+#from util.scraper.content_scraper import scrape_website
+from scrape_with_config import scrape_website
 
 import time
 import os
 import logging
 import argparse
 from tqdm import tqdm
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -25,12 +28,16 @@ logging.basicConfig(
 
 # all defined modules
 AmazonModule = "Amazon"
+CONFIGS_FOLDER = "config_files"
 
 RETRIES = 3
 
 def main():
-    
-    html = ""
+    video_content = ""
+    code_content = "[]"
+    image_content = []
+    text_content = "{}"
+
     text_result = {"entities": []}
     image_result = {"entities": []}
     video_result = {"entities": []}
@@ -40,58 +47,46 @@ def main():
     parser = argparse.ArgumentParser(description="Process an input file and save output.")
     
     # Adding input and output arguments
-    parser.add_argument("--input_folder", required=True, help="Path to the input file")
+    parser.add_argument("--config_file", required=True, help="json with configurations to a specific site")
+    parser.add_argument("--batch_file", required=True, help="path to obtain the batch urls")
     parser.add_argument("--output_file", required=True, help="Path to save the output file")
     parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")
-
 
     # parses the arguments
     args = parser.parse_args()
 
     # sets the input and output files
-    batch_folder = args.input_folder
-    output = args.output_file
+    config_file = args.config_file
+    batch_file = args.batch_file
+    output_file = args.output_file
 
-    # scraping urls and htmls should be done locally before doing all llm extraction stuff in ADA
-    """# makes a new url extractor
-    url_extractor = ScrappingManager()
+    # extracts the contents of the configs file
+    with open(os.path.join(CONFIGS_FOLDER, config_file), 'r') as f:
+        configs = json.load(f)
 
-    # initializes the modules the user wants to add to the url extractor
-    url_extractor.initializeModule(AmazonModule)
+    # gets the product_urls from the batch
+    with open(batch_file, "r") as f:
+        product_urls = f.readlines()
 
-    # fetches the urls of a module
-    URL_set = url_extractor.getProductURLs(AmazonModule, "search_queries.txt")
-
-    print(URL_set)
-
-    URL_list = list(URL_set)[:5]"""
-    
-    with open(output, "w") as file:
-        print("EMPTYING TRIPLETS FILE")
-    
     start_time = time.time()
     
-    # gets all the html code in a specific batch
-    entries = list(os.scandir(batch_folder))
-    
-    # iterates through each html file
-    for i in tqdm(range(len(entries))):
-        print(f"HTML {entries[i]}")
-        with open(entries[i], "r") as f:
-            html = f.read()
+    # iterates through each url
+    for url in tqdm(product_urls):
+
+        url = url.strip()
             
         # scrapes the text, images, code, and video contents
-        text_content, image_content, code_content, video_content = scrape_website(html, AmazonModule)
+        #text_content, image_content, code_content, video_content = scrape_website(url, AmazonModule)
+        text_content = scrape_website(url, configs)
 
-        if text_content == "" and image_content == "" and code_content == "" and video_content == "":
-            exit()
-
-        if text_content == "{'name': None, 'manufacturer': None, 'details': ''}":
-            logging.error(f"Error extracting contents from {entries[i]}")
+        if text_content == "{}":
+            logging.error(f"Error extracting contents from {url}")
             continue
 
+        print(text_content)
+        
         # extracts text entities if there's text content
-        if text_content != "{'name': None, 'manufacturer': None, 'details': ''}":
+        if text_content != "{}":
             text_result = analyze_text_elements(text_content)
             print("finished text")
         
@@ -152,10 +147,10 @@ def main():
 
         for triplet in result_list:
             default_weight = 0.5
-            triplets_list.append(str(triplet + (default_weight,)))
+            triplets_list.append(f"{triplet} {default_weight} {url} {datetime.now()}")
         
         # appends the triplets into designated triplet file
-        with open(output, "a") as file:
+        with open(output_file, "a") as file:
             for triplet in triplets_list:
                 file.writelines(str(triplet))
                 file.write("\n")

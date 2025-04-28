@@ -71,7 +71,9 @@ def generate(entities):
                 research -> hasTopic -> sensor
                 research -> hasTopic -> device
                 privacyPolicy -> follows -> regulation
+                device -> isCategory -> category
                 ```
+                Note: This is a non-exhaustive list of the schema. Feel free to add more beyond the static schema as long as you follow the triplet format.
 
                 ### **Example Input:**
                 ```
@@ -83,6 +85,7 @@ def generate(entities):
                 [
                 (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee')),
                 (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Alexa')),
+                (('device', 'Govee Smart Light Bulbs'), 'isCategory', ('category', 'Smart Lighting')),
                 (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'WiFi')),
                 (('application', 'Alexa'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
                 (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'General Data Protection Regulation (GDPR)'))

@@ -15,10 +15,12 @@ from bs4 import BeautifulSoup
 import requests
 from tqdm import tqdm
 from urllib.parse import urljoin
+import undetected_chromedriver as uc
 #from scraping import local_access, download_proxy, load_proxies, find_working_proxy
 
 CONFIGS_FOLDER = "config_files"
 working_proxy = None
+VISITED = []
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
@@ -39,22 +41,30 @@ def click_next(driver, configs):
         )
 
         # Scroll into view in case it's offscreen
-        driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_button)
         time.sleep(0.5)
 
         # Try to click it directly
         next_href = next_button.get_attribute("href")
         if not next_href:
             print("⚠️ Next button found but no href.")
-            next_button.click()
-            time.sleep(2)
+            # Click with fallback to JS click in case of overlay issues
+            try:
+                next_button.click()
+            except Exception as e:
+                print("⚠️ Standard click failed, trying JS click...")
+                driver.execute_script("arguments[0].click();", next_button)
         else:
             next_href = urljoin(configs["home_url"], next_href)
             print("👉 Navigating to:", next_href)
             driver.get(next_href)
             time.sleep(2)  # Let JS render
 
-        return BeautifulSoup(driver.page_source, "html.parser")
+        if driver.current_url not in VISITED:
+            VISITED.append(driver.current_url)
+            return BeautifulSoup(driver.page_source, "html.parser")
+        else:
+            return None
 
     except TimeoutException:
         print("❌ Timeout: Next button not found.")
@@ -84,7 +94,6 @@ if __name__ == "__main__":
 
     print(configs)
     print(f"PRODUCT URL TAGS {configs["product_urls"]}")
-    #exit()
 
     # gets all the search queries
     with open("search_queries.txt", "r") as f:
@@ -93,18 +102,21 @@ if __name__ == "__main__":
     # Automatically install matching chromedriver
     chromedriver_autoinstaller.install()
 
-    options = Options()
-    options.headless = True
-    fake_useragent = UserAgent()
-    options.add_argument(f'user-agent={fake_useragent.random}')
-    
-    #options.add_argument("--headless")  # Run headless
-    options.add_argument("--no-sandbox")  # Necessary for some restricted environments
-    options.add_argument("--disable-dev-shm-usage")  # Overcome resource limitations
+    options = uc.ChromeOptions()
+    # options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
+    driver = uc.Chrome(options=options)
 
-    # Set up the Chrome browser
-    driver = webdriver.Chrome(options=options)
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": """
+            Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined
+            })
+        """
+    })
+    #driver.get("https://www.walmart.com/")
 
     # Open the website
     driver.get(configs["home_url"])
@@ -125,11 +137,12 @@ if __name__ == "__main__":
     #print(f"{configs["search_bar"]["elem"]}#{configs["search_bar"]["id"]}.{".".join(configs["search_bar"]["class"].split())}")
     #exit()
     # Optional: wait a bit for elements to load
-    search_queries = search_queries[1:]
-
+    #search_queries = search_queries[3:]
     with open(configs["temp_urls"], "a") as f:
 
+        #search_queries = search_queries[:3]
         for search in tqdm(search_queries):
+            print(f"SEARCHING FOR {search}")
             
 
             #print(f"{configs["search_bar"]["elem"]}#{".".join(configs["search_bar"]["class"].split())}")
@@ -199,7 +212,7 @@ if __name__ == "__main__":
             
             # reloads the page to the home page
             driver.get(configs["home_url"])
-            time.sleep(2)
+            time.sleep(10)
 
             search_bar = driver.find_element(By.CSS_SELECTOR, configs["search_bar"])
             
