@@ -1,4 +1,5 @@
 import requests
+import random
 import os
 import ast
 from dotenv import load_dotenv
@@ -26,6 +27,16 @@ from arango import ArangoClient
 
 # Load environment variables
 load_dotenv()
+
+client = ArangoClient(hosts='http://visionpc01.cs.umbc.edu:8529')
+    
+db = client.db(
+    "_system",
+    username='root',
+    password='MdD5yiJ7sePXrbN5',
+)
+
+graph = db.graph("IoT_KG")
 
 def get_triplets(filename):
 
@@ -119,76 +130,76 @@ def format_triplet(triplet):
 
     return variants
 
+# https://docs.arangodb.com/3.12/aql/data-queries/
+def top_by_edge(edge_col, vertex_col, direction="INBOUND", limit=3):
+    query = f"""
+            FOR v IN `{vertex_col}`
+            LET edgeCount = LENGTH(
+                FOR w IN 1..1 {direction} v `{edge_col}`
+                RETURN 1
+            )
+            SORT edgeCount DESC
+            LIMIT @limit
+            RETURN {{ name: v.name, count: edgeCount }}
+            """
+    return list(db.aql.execute(query, bind_vars={"limit": limit}))
+
 def format_opposing_triplet(triplet):
-    """
-    Converts a structured triplet into a opposing human-readable query.
-    The opposing search is based on the relationship and will switch the 
-    entities to make an opposing search.
 
-    Example:
-    ('device', 'Govee Smart LED Light Bars') performs ('process', 'location tracking')
-    → "Govee Smart LED Light Bars DOES NOT perform location tracking"
-    """
+    # TODO: how can we ensure the opposing doesn't include the original
+
     subject, predicate, obj = triplet
+    subject = list(subject)
+    obj = list(obj)
 
-    if predicate == 'developedBy':
-        predicate = 'is not developed by'
-        return f"{subject[1]} {predicate} {obj[1]}"
-    elif predicate == 'manufacturedBy':
-        predicate = 'is not manufactured by'
-        return f"{obj[1]} {predicate} {subject[1]}"
-    elif predicate == 'compatibleWith':
-        predicate = 'is not compatible with'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasSensor':
-        predicate = 'does not have'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'accessSensor':
-        predicate = "can not access"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'requiresSensor':
-        predicate = "does not require"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'performs':
-        predicate = "does not perfor,m"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasPolicy':
-        predicate = 'does not jave policy'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'statesInPolicy':
-        predicate = 'does not state that there is'
-        return f"{obj[1]} {predicate} {subject[1]}" 
-    elif predicate == 'captures':
-        predicate = "does not capture"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'canInfer':
-        predicate = 'can not infer'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'showInference':
-        predicate = 'does not show inference'
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'references':
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'hasTopic':
-        predicate = "does not have topic"
-        return f"{subject[1]} {predicate} {obj[1]}" 
-    elif predicate == 'follows':
-        predicate = "does not follow"
-        return f"{subject[1]} {predicate} {obj[1]}" 
+    choice = ""
+    my_vertex = ""
+    result = []
+
+    # TODO: Determine which node to corrupt for opposing search
+    if random.random() < 0.50:
+        choice = "subject"
+        my_vertex = subject[0]
     else:
-        print("Error in search validation: Invalid relationship.")
-    
-    return ""
+        choice = "obj"
+        my_vertex = obj[0]
 
-def get_total_search_results(query):
+
+    tops = top_by_edge(
+        edge_col=predicate,
+        vertex_col=my_vertex,
+        direction="INBOUND",
+        limit=5
+    )
+
+    for doc in tops:
+        print(doc["name"], "→", doc["count"], "devices")
+
+        if doc["name"] == subject[1] or doc["name"] == obj[1]:
+            continue
+        if len(result) >= 3:
+            break
+
+        if choice == "subject":
+            subject[1] = doc["name"]
+        else:
+            obj[1] = doc["name"]
+        new_triplet = subject, predicate, obj
+        result.append(format_triplet(new_triplet))
+
+    print(tops)
+
+    print("✅ FINAL: ",result)
+    return result
+
+def get_total_search_results(driver, query):
     """
     Uses selenium to search for the query and grabs the 'result-stats' id tag that
     Google uses to provide an approximate number of search results
     """
     
-    driver = get_chrome_driver()
     driver.get('https://www.google.com')
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 10)
 
     search = driver.find_element("name", "q")
     search.send_keys(query)
@@ -209,50 +220,49 @@ def get_total_search_results(query):
     
     except Exception as e:
         print("Error: result-stats not found or empty.", e)
-    driver.quit()
     return -1
 
 def main():
-    client = ArangoClient(hosts='http://visionpc01.cs.umbc.edu:8529')
-    
-    db = client.db(
-        "_system",
-        username='root',
-        password='MdD5yiJ7sePXrbN5',
-    )
 
-    graph = db.graph("IoT_KG")
-    collection = graph.vertex_collection("manufacturer")
-    similar_node = []
-    for m in collection.all():
-        similar_node.append(m["name"])
-        # print(m["name"])
-    
-    # TODO: How do we decide which node to use? Random? Ranking? idk man
-    print(similar_node)
-    
+    driver = get_chrome_driver()
 
-    # triplets = get_triplets("triplets.txt")
+    try:
+        triplets = get_triplets("triplets.txt")
 
-    # for triplet in triplets[:2]:
-    #     query = format_triplet(triplet)
-    #     opposingQuery = format_opposing_triplet(triplet)
+        for triplet in triplets[:1]:
+            query = format_triplet(triplet)
+            opposingQuery = format_opposing_triplet(triplet)
 
-    #     normalResults = -1        
-    #     while(normalResults < 0):
-    #         normalResults = get_total_search_results(query)
+            print(query)
+            print(opposingQuery)
 
-    #     opposingResults = -1
-    #     while(opposingResults < 0):
-    #         opposingResults = get_total_search_results(opposingQuery)
+            normalResults = 0        
+            opposingResults = 0
+            totalResults = 0;
 
-    #     print(query)
-    #     print(opposingQuery)
-    #     print(normalResults)
-    #     print(opposingResults)
+            for q in query:
+                result = get_total_search_results(driver, q)
+                if result > normalResults:
+                    normalResults = result
+                print("Top normal result: ", normalResults)
+                totalResults += result
 
-    #     weight = (normalResults + opposingResults) / 2
-    #     print(weight)
+            for set in opposingQuery:
+                for q in set:
+                    result = get_total_search_results(driver, q)
+                    if result > opposingResults:
+                        opposingResults = result
+                    print("Top opposing result: ", opposingResults)
+                    totalResults += result
+                
+            
+            print(normalResults)
+            print(opposingResults)
+
+            weight = normalResults / (normalResults + opposingResults)
+            print(weight)
+    finally:
+        driver.quit()
 
 if __name__ == "__main__":
     main()
