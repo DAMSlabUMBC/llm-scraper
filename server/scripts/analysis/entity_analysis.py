@@ -128,8 +128,25 @@ def analyze_text_elements(text_content):
         
         removed_json_tags = extract_json(extract_python(removed_think_tags))
 
-        # checks if the generated output is a json
         try:
+            parsed = json.loads(removed_json_tags.strip())
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decoding failed: {e}")
+            parsed = None
+
+        if parsed:
+            # Check structure without regex
+            if isinstance(parsed, dict) and "entities" in parsed and isinstance(parsed["entities"], list):
+                if all(isinstance(e, str) for e in parsed["entities"]):
+                    entities_json = parsed
+                    break  # Valid output, no need to retry
+
+    # If failed after retries
+    if entities_json == {"entities": []}:
+        print("⚠️ No valid entities extracted after retries.")
+
+        # checks if the generated output is a json
+        """try:
             entities_json = json.loads(removed_json_tags.strip())
         except json.JSONDecodeError as e:
             entities_json = None
@@ -139,17 +156,15 @@ def analyze_text_elements(text_content):
             if isinstance(entities_json.get("entities"), list):
                 if len(entities_json.get("entities")) > 0:
                     if isinstance(entities_json.get("entities")[0], str):
-                        break
+                        if re.match(ENTITIES_PATTERN, str(entities_json)):
+                            break
+                        else:
+                            entities_json = None
                 else:
                     break
-
-        if re.match(ENTITIES_PATTERN, str(entities_json)):
-            break
-        else:
-            entities_json = None
             
     # entities json has an empty list of entities if it fails to generate entities for a number of retries
     if entities_json == None:
-        entities_json = {"entities": []}
+        entities_json = {"entities": []}"""
     
     return entities_json
