@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from tqdm import tqdm
-from util.scraper.browser import get_chrome_driver
+#from util.scraper.browser import get_chrome_driver
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
 
