@@ -20,7 +20,7 @@ def scrape_website(url, configs):
 
     # opens playwright driver for scraping
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             viewport={"width": 1280, "height": 800},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -173,14 +173,13 @@ if __name__ == "__main__":
         configs = json.load(f)
 
     with open(output_file, "a", encoding="utf-8") as f:
-        # start at 344
-        product_urls = product_urls[355:]
         for url in tqdm(product_urls):
             url = url.strip()
 
             print(f"URL {url}")
 
             text_content = scrape_website(url, configs)
+            print(text_content)
             
             f.write(f"{text_content} {url}\n")
 
