@@ -1,9 +1,9 @@
 import os
 
-ALL_URLS = "bestbuy_urls.txt" #"official_best_buy_urls.txt"
+ALL_URLS = "official_best_buy_urls.txt" #"bestbuy_urls.txt" #"official_best_buy_urls.txt"
 FOLDER = "bestbuy_batches"
-BATCH_SIZE = 700
-TEMP_URLS = "bestbuy_urls.txt"
+BATCH_SIZE = 200
+TEMP_URLS = "official_best_buy_urls.txt"
 
 def batch_urls(start=0):
     # Make sure the output folder exists
@@ -42,5 +42,8 @@ def rebatch(start, end):
 
 
 if __name__ == "__main__":
-    rebatch(1, 45)
+    # empties temp urls
+    with open("bestbuy_urls.txt", "w") as f:
+        print("emptying urls")
+    #rebatch(1, 26)
     batch_urls()
