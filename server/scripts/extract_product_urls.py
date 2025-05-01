@@ -6,6 +6,7 @@ from tqdm import tqdm
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+import random
 
 CONFIGS_FOLDER = "config_files"
 VISITED = []
@@ -22,14 +23,18 @@ def click_next(page, configs):
             return None
 
         next_href = next_button.first.get_attribute("href")
-        if next_href:
+        print(f"next_href {next_href}")
+        if next_href and next_href != "#":
             full_url = urljoin(configs["home_url"], next_href)
             print("👉 Navigating to:", full_url)
             page.goto(full_url, timeout=60000)
         else:
             next_button.first.scroll_into_view_if_needed()
             next_button.first.click()
-            time.sleep(3)
+            #time.sleep(30)
+            page.mouse.move(100, 200)
+            page.mouse.wheel(0, 1500)
+            time.sleep(1 + random.random() * 2)
 
         if page.url not in VISITED:
             VISITED.append(page.url)
@@ -70,6 +75,8 @@ def main(config_file):
             window.navigator.chrome = { runtime: {} };
             Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
             Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+            Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
         """)
 
         page.goto(configs["home_url"], timeout=60000)
@@ -78,12 +85,17 @@ def main(config_file):
         search_box = page.locator(configs["eccomerce"]["search_bar"])
 
         with open(configs["temp_urls"], "a") as f:
+            search_queries = ["smart cameras", "smart plugs"]
+            #search_queries = search_queries[8:]
             for query in tqdm(search_queries):
                 print(f"🔎 Searching for: {query}")
                 try:
                     search_box.fill(query)
                     search_box.press("Enter")
-                    time.sleep(3)
+                    #time.sleep(30)
+                    page.mouse.move(100, 200)
+                    page.mouse.wheel(0, 1500)
+                    time.sleep(1 + random.random() * 2)
 
                     for _ in range(3):
                         page.mouse.wheel(0, 1000)
