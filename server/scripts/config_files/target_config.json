@@ -2,12 +2,13 @@
     "home_url": "https://www.target.com/",
     "eccomerce": {
         "search_bar": "input#search.sc-d6ee3fa-2.juTcZ",
-        "product_urls": "a.styles_ndsLink__GUaai.styles_onLightSecondary__mfKBu.styles_neverDecorate__heNCW.sc-8e0d6653-1.kNathH.h-display-block"},
-        "next": "button.styles_buttonHeadless__bfWcl.styles_buttonWithArrow__bTRI1.styles_next__Gbzbp",
+        "product_urls": "a.styles_ndsLink__GUaai.styles_onLightSecondary__mfKBu.styles_neverDecorate__heNCW.sc-8e0d6653-1.kNathH.h-display-block",
+        "next": "button.styles_buttonHeadless__bfWcl.styles_buttonWithArrow__bTRI1.styles_next__Gbzbp"
+    },
     "temp_urls": "target_urls.txt",
     "official_urls": "official_target_urls.txt",
     "skip": {
-        "#pageBodyContainer > div > div > div.h-margin-a-default.h-margin-b-jumbo.h-text-grayDark > div > h1 > div": "This item is not available"
+        "div[data-test='out-of-stock-message']": "This item is not available"
     },
     "text_content": {
         "product_name": ["h1#pdp-product-title-id.styles_ndsHeading__HcGpD.styles_fontSize3__lwt2p.styles_x2Margin__M5gHh.h-text-bold.h-margin-a-module-gap", "h1[data-test=\"product-title\"]"],
