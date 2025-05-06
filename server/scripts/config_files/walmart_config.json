@@ -1,8 +1,10 @@
 {
     "home_url": "https://www.walmart.com/",
-    "search_bar": "input.flex-auto.lh-solid.sans-serif.search-bar.br-pill.f5.b--none.search-bar-redesigned-v2",
-    "product_urls": "a.w-100.h-100.z-1.hide-sibling-opacity.absolute",
-    "next": "link",
+    "eccomerce": {
+        "search_bar": "input.flex-auto.lh-solid.sans-serif.search-bar.br-pill.f5.b--none.search-bar-redesigned-v2",
+        "product_urls": "a.w-100.h-100.z-1.hide-sibling-opacity.absolute[href^='/ip/']",
+        "next": "a[data-testid='NextPage'][aria-label='Next Page']"
+    },
     "temp_urls": "walmart_urls.txt",
     "official_urls": "official_walmart_urls.txt",
     "text": {

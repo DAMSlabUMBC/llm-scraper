@@ -35,3 +35,4 @@ thermometers with Bluetooth/Wi-Fi
 smart sprinkler controllers
 smart weather stations
 outdoor smart cameras and lighting
+smart blinds

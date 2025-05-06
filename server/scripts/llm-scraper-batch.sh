@@ -4,13 +4,13 @@
 #SBATCH --account=pi_ryus
 #SBATCH --partition=gpu
 #SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
-#SBATCH --array=1-25                       # Run array tasks 0..999 (i.e. 1000 tasks)
+#SBATCH --array=2-4                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
-#SBATCH --mem=150000                        # Memory allocation in MB (150 GB)
+#SBATCH --mem=64GB                        # Memory allocation in MB (150 GB)
 #SBATCH --time=72:00:00                     # Maximum runtime for the job (70 hours)
-#SBATCH --constraint=L40S               # Specific hardware constraint
-#SBATCH --gres=gpu:1                        # Request 4 GPU for the job
+#SBATCH --constraint=L40S              # Specific hardware constraint
+#SBATCH --gres=gpu:1                        # Request 1 GPU for the job
 #SBATCH --output=llm-scraper_output/llm-scraper_%A_%a.out       # Output log (include %A for job ID, %a for array index)
 #SBATCH --error=llm-scraper_error/llm-scraper_%A_%a.err        # Error log
 
@@ -101,10 +101,10 @@ sleep 10
 
 # Use python to run queries
 python main.py \
-  --config_file="best_buy_config.json" \
-  --batch_file="bestbuy_batches/batch_${SLURM_ARRAY_TASK_ID}.txt" \
-  --output_file="bestbuy_triplets/triplets_${SLURM_ARRAY_TASK_ID}.txt"
-  -ollama_port="${PORT}"
+  --config_file="samsclub_config.json" \
+  --batch_file="extracted_samsclub/batch_${SLURM_ARRAY_TASK_ID}.txt" \
+  --output_file="new_samsclub_triplets/triplets_${SLURM_ARRAY_TASK_ID}.txt" \
+  --ollama_port="${PORT}"
 
 
 echo "Python script done for task ${SLURM_ARRAY_TASK_ID}."

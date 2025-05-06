@@ -16,7 +16,7 @@ CLASSIFICATIONS = ["UNRENDERED", "LOGO", "DETAILED"]
 
 RETRIES = 3
 
-def analyze_image_elements(image_content):
+def analyze_image_elements(image_content, entity_prompt):
     """
     Extracts image entities
     Input: image_content (list of image urls)
@@ -111,7 +111,7 @@ def analyze_image_elements(image_content):
             print(f"IMAGE DESCRIPTION {summary}")
 
             # extracts entities from the image summary
-            extracted_entities = analyze_text_elements(summary)
+            extracted_entities = analyze_text_elements(summary, entity_prompt)
                 
             print(f"IMAGE OUTPUT {extracted_entities}")
 
