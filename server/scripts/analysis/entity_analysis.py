@@ -3,12 +3,21 @@ import torch
 import json
 from util.llm_utils.response_cleaner import extract_json, extract_python, remove_think_tags
 import re
+import ast
+import random
+import os
+import argparse
+from tqdm import tqdm
+
 
 RETRIES = 3
 
+PROMPTS_FOLDER = "prompts"
+OUTPUT_FOLDER = "analysis_output"
+
 ENTITIES_PATTERN = r"^\{'entities': \[(?:'(?:[^']*)'(?:, )?)*\]\}$"
 
-def analyze_text_elements(text_content):
+def analyze_text_elements(text_content, prompt):
     entities_json = {"entities": []}
 
     # initializes ollama client
@@ -26,103 +35,18 @@ def analyze_text_elements(text_content):
             messages=[
                 {
                     'role': 'system',
-                    'content': """
-                        You are a Named Entity Recognition (NER) Specialist that extracts IoT-related entities from given text. The extracted entities must fit into one of these categories:
-                        - devices
-                        - manufacturer
-                        - application
-                        - process
-                        - sensor
-                        - observation
-                        - inference
-                        - research
-                        - privacy policy
-                        - regulation
-                        - category
-
-                        ### Output Rules:
-                        - Output strictly in the JSON format: `{ "entities": [list of entities] }`
-                        - Do **not** include explanations, reasoning, or extra text.
-                        - Do **not** use the word "json" in the output.
-                        - If no entities are found, return `{ "entities": [] }`.
-
-                        ### Example Outputs:
-                        **Example 1:**
-                        Input: `"Amazon Echo Dot, With Alexa, Charcoal."`
-                        Output:
-                        ```
-                        {
-                            "entities": ["Amazon", "Alexa", "Amazon Echo Dot", "Speaker", "voice assistant"]
-                        }
-                        ```
-
-                        **Example 2:**
-                        Input: `"There are no entities here."`
-                        Output:
-                        ```
-                        { "entities": [] }
-                        ```
-                        
-                        **INCORRECT OUTPUT:**
-                        ```json
-                        {
-                            "entities": [
-                                "Smart Soil Moisture Sensor",
-                                "THIRDREALITY",
-                                "Zigbee Hub",
-                                "Alexa Echo Devices",
-                                "Capacitive Probe",
-                                "Home Assistant",
-                                "Hubitat",
-                                "SmartThings",
-                                "Homey",
-                                "Apple Home",
-                                "Google Home",
-                                "Remote Monitoring",
-                                "Automation",
-                                "OTA Updates",
-                                "Smart Bridge MZ1"
-                            ]
-                        }
-                        ```
-                        
-                        **CORRECT OUTPUT:**
-                        ```
-                        {
-                            "entities": [
-                                "Smart Soil Moisture Sensor",
-                                "THIRDREALITY",
-                                "Zigbee Hub",
-                                "Alexa Echo Devices",
-                                "Capacitive Probe",
-                                "Home Assistant",
-                                "Hubitat",
-                                "SmartThings",
-                                "Homey",
-                                "Apple Home",
-                                "Google Home",
-                                "Remote Monitoring",
-                                "Automation",
-                                "OTA Updates",
-                                "Smart Bridge MZ1"
-                            ]
-                        }
-                        ```
-                        
-
-                        **Remember:** Only return JSON, nothing else.
-                    """,
+                    'content': f"{prompt}",
                 },
 
                 {
                     'role': 'user',
-                    'content': text_content,
+                    'content': str(text_content),
                 },
             ],
             stream=False
         )
         
-        print(f"before parsing {response.message.content}")
+        #print(f"before parsing {response.message.content}")
         
         removed_think_tags = remove_think_tags(response.message.content)
         
@@ -145,26 +69,75 @@ def analyze_text_elements(text_content):
     if entities_json == {"entities": []}:
         print("⚠️ No valid entities extracted after retries.")
 
-        # checks if the generated output is a json
-        """try:
-            entities_json = json.loads(removed_json_tags.strip())
-        except json.JSONDecodeError as e:
-            entities_json = None
-
-        # checks if it in the desired format {'entities': [...]}
-        if isinstance(entities_json, dict):
-            if isinstance(entities_json.get("entities"), list):
-                if len(entities_json.get("entities")) > 0:
-                    if isinstance(entities_json.get("entities")[0], str):
-                        if re.match(ENTITIES_PATTERN, str(entities_json)):
-                            break
-                        else:
-                            entities_json = None
-                else:
-                    break
-            
-    # entities json has an empty list of entities if it fails to generate entities for a number of retries
-    if entities_json == None:
-        entities_json = {"entities": []}"""
+    print(entities_json)
     
     return entities_json
+
+def parse_content_line(line):
+    """
+    Parses a line formatted as: {dict} <space> URL
+    Safely extracts and evaluates the dictionary portion and URL string.
+    """
+    try:
+        # Match the URL (requires at least one http/https link at the end)
+        match = re.search(r"(https?://[^\s]+)$", line.strip())
+        if not match:
+            raise ValueError("No URL found.")
+
+        url = match.group(1)
+
+        # Get everything before the URL
+        dict_str = line[:match.start()].strip()
+
+        # Fix trailing commas if present
+        if dict_str.endswith(","):
+            dict_str = dict_str[:-1]
+
+        # Evaluate just the dictionary portion
+        text_dict = ast.literal_eval(dict_str)
+
+        return text_dict, url
+
+    except Exception as e:
+        print(f"❌ Failed to parse line: {e}")
+        return None, None
+
+if __name__ == "__main__":
+    # initializes the parser
+    parser = argparse.ArgumentParser(description="testing the effectiveness of the prompt")
+    parser.add_argument("--input_file", required=True, help="file with sample text content to test")
+    parser.add_argument("--output_file", required=True, help="file to output results")
+    parser.add_argument("--prompt_folder", required=True, help="filw which holds the prompt to test")
+
+    args = parser.parse_args()
+
+    input_file = args.input_file
+    output_file = args.output_file
+    prompt_folder = args.prompt_folder
+
+    # opens the test file
+    with open(input_file, "r", encoding="utf-8", errors="replace") as f:
+        text_contents = f.readlines()
+
+    # extracts the prompt
+    with open(os.path.join(PROMPTS_FOLDER, prompt_folder, "entity_analysis.txt"), "r", encoding="utf-8") as f:
+        prompt = f.read()
+
+    random.shuffle(text_contents)
+    text_contents = text_contents[:50]
+    with open(os.path.join(OUTPUT_FOLDER, output_file), "a", encoding="utf-8") as f:
+        for content in tqdm(text_contents):
+
+            text_dict, url = parse_content_line(content)
+            if not text_dict:
+                continue
+            result = analyze_text_elements(text_dict, prompt)
+            f.write(f"{text_dict} | {url} | {result}\n")
+
+            # Use regex to surround the URL with quotes
+            # content_fixed = re.sub(r'(https?://[^\s)]+)', r"'\1'", content)
+            # content_tuple = ast.literal_eval(content_fixed.strip())
+            # text_content, url = content_tuple
+            
+            # result = analyze_text_elements(text_content, prompt)
+            # f.write(f"{text_content} {url} {result}\n")
