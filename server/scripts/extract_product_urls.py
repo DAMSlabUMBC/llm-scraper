@@ -1,233 +1,158 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, NoSuchElementException
-import chromedriver_autoinstaller
-import time
 import argparse
-import json
 import os
-from selenium.webdriver.chrome.options import Options
-from fake_useragent import UserAgent
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from bs4 import BeautifulSoup
-import requests
+import json
+import time
 from tqdm import tqdm
+from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import undetected_chromedriver as uc
-#from scraping import local_access, download_proxy, load_proxies, find_working_proxy
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+import random
 
 CONFIGS_FOLDER = "config_files"
-working_proxy = None
 VISITED = []
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Connection": "keep-alive"
-}
-
-def click_next(driver, configs):
-
+def click_next(page, configs):
     try:
-        print("🔍 Looking for next button with selector:", configs["next"])
+        print("🔍 Looking for next button with selector:", configs['eccomerce']["next"])
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
 
-        # Wait up to 10s for the next button to appear and be clickable
-        next_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, configs["next"]))
-        )
-
-        # Scroll into view in case it's offscreen
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_button)
-        time.sleep(0.5)
-
-        # Try to click it directly
-        next_href = next_button.get_attribute("href")
-        if not next_href:
-            print("⚠️ Next button found but no href.")
-            # Click with fallback to JS click in case of overlay issues
-            try:
-                next_button.click()
-            except Exception as e:
-                print("⚠️ Standard click failed, trying JS click...")
-                driver.execute_script("arguments[0].click();", next_button)
-        else:
-            next_href = urljoin(configs["home_url"], next_href)
-            print("👉 Navigating to:", next_href)
-            driver.get(next_href)
-            time.sleep(2)  # Let JS render
-
-        if driver.current_url not in VISITED:
-            VISITED.append(driver.current_url)
-            return BeautifulSoup(driver.page_source, "html.parser")
-        else:
+        next_button = page.locator(configs["eccomerce"]["next"])
+        if next_button.count() == 0:
+            print("❌ Next button not found.")
             return None
 
-    except TimeoutException:
-        print("❌ Timeout: Next button not found.")
-    except NoSuchElementException:
-        print("❌ Element not found: Are you sure the selector is correct?")
+        next_href = next_button.first.get_attribute("href")
+        print(f"next_href {next_href}")
+        if next_href and next_href != "#":
+            full_url = urljoin(configs["home_url"], next_href)
+            print("👉 Navigating to:", full_url)
+            page.goto(full_url, timeout=60000)
+        else:
+            next_button.first.scroll_into_view_if_needed()
+            next_button.first.click()
+            #time.sleep(30)
+            page.mouse.move(100, 200)
+            page.mouse.wheel(0, 1500)
+            time.sleep(1 + random.random() * 2)
+
+        if page.url not in VISITED:
+            VISITED.append(page.url)
+            return BeautifulSoup(page.content(), "html.parser")
+        return None
+
     except Exception as e:
-        print("❌ Selenium error navigating to next page:", e)
+        print("❌ Error in click_next:", e)
+        return None
 
-    return None
-
-if __name__ == "__main__":
-    product_urls = set()
-
-    # initializes argument parser
-    parser = argparse.ArgumentParser(description="Process an input file and save output.")
-
-    parser.add_argument("--config_file", required=True, help="json with configurations to a specific site")
-
-    # parses the arguments
-    args = parser.parse_args()
-
-    # sets the input and output files
-    config_file = args.config_file
-
+def main(config_file):
     with open(os.path.join(CONFIGS_FOLDER, config_file), 'r') as f:
         configs = json.load(f)
 
-    print(configs)
-    print(f"PRODUCT URL TAGS {configs["product_urls"]}")
+    print("📄 Loaded Config:", configs["eccomerce"]["product_urls"])
 
-    # gets all the search queries
     with open("search_queries.txt", "r") as f:
-        search_queries = f.readlines()
+        search_queries = [q.strip() for q in f.readlines()]
 
-    # Automatically install matching chromedriver
-    chromedriver_autoinstaller.install()
+    product_urls = set()
 
-    options = uc.ChromeOptions()
-    # options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, args=["--disable-http2"])
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 800},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
+            java_script_enabled=True,
+            locale="en-US",
+            timezone_id="America/New_York",
+            device_scale_factor=1,
+        )
 
-    driver = uc.Chrome(options=options)
+        page = context.new_page()
+        
+        page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            window.navigator.chrome = { runtime: {} };
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+            Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+        """)
 
-    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-        "source": """
-            Object.defineProperty(navigator, 'webdriver', {
-            get: () => undefined
-            })
-        """
-    })
-    #driver.get("https://www.walmart.com/")
+        page.goto(configs["home_url"], timeout=60000)
+        page.wait_for_selector(configs["eccomerce"]["search_bar"], timeout=10000)
 
-    # Open the website
-    driver.get(configs["home_url"])
+        search_box = page.locator(configs["eccomerce"]["search_bar"])
 
-    wait = WebDriverWait(driver, 30)
+        with open(configs["temp_urls"], "a") as f:
+            search_queries = ["smart cameras", "smart plugs"]
+            #search_queries = search_queries[8:]
+            for query in tqdm(search_queries):
+                print(f"🔎 Searching for: {query}")
+                try:
+                    search_box.fill(query)
+                    search_box.press("Enter")
+                    #time.sleep(30)
+                    page.mouse.move(100, 200)
+                    page.mouse.wheel(0, 1500)
+                    time.sleep(1 + random.random() * 2)
 
-    # finds the search box
-    try:
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, configs["search_bar"])))
-        search_box = driver.find_element(By.CSS_SELECTOR, configs["search_bar"])
-    except Exception as e:
-        print("❌ Could not find search bar:", e)
-        driver.save_screenshot("error_screenshot.png")
-        with open("error_page.html", "w", encoding="utf-8") as f:
-            f.write(driver.page_source)
-        exit()
+                    for _ in range(3):
+                        page.mouse.wheel(0, 1000)
+                        time.sleep(1)
 
-    #print(f"{configs["search_bar"]["elem"]}#{configs["search_bar"]["id"]}.{".".join(configs["search_bar"]["class"].split())}")
-    #exit()
-    # Optional: wait a bit for elements to load
-    #search_queries = search_queries[3:]
-    with open(configs["temp_urls"], "a") as f:
+                    soup = BeautifulSoup(page.content(), "html.parser")
+                    product_elements = soup.select(configs["eccomerce"]["product_urls"])
+                    print(f"🔗 Found {len(product_elements)} product links")
 
-        #search_queries = search_queries[:3]
-        for search in tqdm(search_queries):
-            print(f"SEARCHING FOR {search}")
-            
+                    if len(product_elements) == 0:
+                        with open("debug_no_products.html", "w", encoding="utf-8") as debug_f:
+                            debug_f.write(page.content())
+                        print("📄 Dumped page for inspection.")
+                        continue
 
-            #print(f"{configs["search_bar"]["elem"]}#{".".join(configs["search_bar"]["class"].split())}")
+                    for product in product_elements:
+                        href = product.get("href")
+                        if href and href.startswith("/"):
+                            full_url = configs["home_url"].rstrip("/") + href
+                            f.write(full_url + "\n")
+                            product_urls.add(full_url)
 
-            try:
-                # Attempt to clear the search box
-                search_box.clear()
-            except StaleElementReferenceException:
+                    while True:
+                        soup = click_next(page, configs)
+                        if not soup:
+                            break
 
-                # Re-locate the search box if it's stale
-                search_box = driver.find_element(By.CSS_SELECTOR, f"{configs["search_bar"]}")
-                search_box.clear()
+                        product_elements = soup.select(configs["eccomerce"]["product_urls"])
+                        for product in product_elements:
+                            href = product.get("href")
+                            if href and href.startswith("/"):
+                                full_url = configs["home_url"].rstrip("/") + href
+                                f.write(full_url + "\n")
+                                product_urls.add(full_url)
 
-            # Type the search query
-            search_box.send_keys(search.strip())
+                except Exception as e:
+                    print(f"❌ Failed on query '{query}': {e}")
+                    continue
 
-            # Submit the search (press ENTER)
-            search_box.send_keys(Keys.RETURN)
+                # Reload for next search
+                page.goto(configs["home_url"], timeout=60000)
+                page.wait_for_selector(configs["eccomerce"]["search_bar"], timeout=10000)
+                search_box = page.locator(configs["eccomerce"]["search_bar"])
 
-            html = driver.page_source
+        browser.close()
 
-            # Parse the HTML using BeautifulSoup
-            soup = BeautifulSoup(html, "html.parser")
-
-            # Find all elements matching the selector
-            # Note: BeautifulSoup doesn't support full CSS selectors the way Selenium does (like :nth-child),
-            # so you may need to tweak the selector to use classes, ids, tags, etc.
-            product_elements = soup.select(configs["product_urls"])
-
-            # Extract the href from each product link
-            for product in product_elements:
-                href = product.get("href")
-                if href:
-                    # If it's a relative URL, you might want to prefix with base URL:
-                    if href.startswith("/"):
-                        href = configs["home_url"].rstrip("/") + href
-                    f.write(href + "\n")
-
-            # # Optional: wait to view the result
-            # time.sleep(10)
-
-            # # obtains the product links
-            # products = driver.find_elements(By.CSS_SELECTOR, f"{configs["product_urls"]}")
-            while soup:
-                # Parse the HTML using BeautifulSoup
-                #soup = BeautifulSoup(html, "html.parser")
-
-                # Find all elements matching the selector
-                # Note: BeautifulSoup doesn't support full CSS selectors the way Selenium does (like :nth-child),
-                # so you may need to tweak the selector to use classes, ids, tags, etc.
-                product_elements = soup.select(configs["product_urls"])
-
-                # Extract the href from each product link
-                for product in product_elements:
-                    href = product.get("href")
-                    if href:
-                        # If it's a relative URL, you might want to prefix with base URL:
-                        if href.startswith("/"):
-                            href = configs["home_url"].rstrip("/") + href
-                        f.write(href + "\n")
-
-                soup = click_next(driver, configs)
-
-                # waits to view the results
-                time.sleep(10)
-
-            
-            # reloads the page to the home page
-            driver.get(configs["home_url"])
-            time.sleep(10)
-
-            search_bar = driver.find_element(By.CSS_SELECTOR, configs["search_bar"])
-            
-
-        # Close the browser
-        driver.quit()
-
-    with open(configs["temp_urls"], "r") as f:
-        product_urls = f.readlines()
-
+    # Merge with existing URLs and write to official
     with open(configs["official_urls"], "r") as f:
-        product_urls.extend(f.readlines())
-
-    product_urls = set(product_urls)
+        existing = set([line.strip() for line in f])
+    product_urls.update(existing)
 
     with open(configs["official_urls"], "w") as f:
-        for url in product_urls:
-            f.write(url)
+        for url in sorted(product_urls):
+            f.write(url + "\n")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Playwright-based product URL extractor.")
+    parser.add_argument("--config_file", required=True, help="Path to JSON config file")
+    args = parser.parse_args()
+    main(args.config_file)
