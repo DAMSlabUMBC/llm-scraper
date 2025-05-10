@@ -146,8 +146,6 @@ def top_by_edge(edge_col, vertex_col, direction="INBOUND", limit=3):
 
 def format_opposing_triplet(triplet):
 
-    # TODO: how can we ensure the opposing doesn't include the original
-
     subject, predicate, obj = triplet
     subject = list(subject)
     obj = list(obj)
@@ -222,47 +220,90 @@ def get_total_search_results(driver, query):
         print("Error: result-stats not found or empty.", e)
     return -1
 
-def main():
-
+def search_validation_method(triple):
     driver = get_chrome_driver()
 
     try:
-        triplets = get_triplets("triplets.txt")
+        query = format_triplet(triple)
+        opposingQuery = format_opposing_triplet(triple)
 
-        for triplet in triplets[:1]:
-            query = format_triplet(triplet)
-            opposingQuery = format_opposing_triplet(triplet)
+        print(query)
+        print(opposingQuery)
 
-            print(query)
-            print(opposingQuery)
+        normalResults = 0        
+        opposingResults = 0
+        totalResults = 0;
 
-            normalResults = 0        
-            opposingResults = 0
-            totalResults = 0;
+        for q in query:
+            result = get_total_search_results(driver, q)
+            if result > normalResults:
+                normalResults = result
+            print("Top normal result: ", normalResults)
+            totalResults += result
 
-            for q in query:
+        for set in opposingQuery:
+            for q in set:
                 result = get_total_search_results(driver, q)
-                if result > normalResults:
-                    normalResults = result
-                print("Top normal result: ", normalResults)
+                if result > opposingResults:
+                    opposingResults = result
+                print("Top opposing result: ", opposingResults)
                 totalResults += result
-
-            for set in opposingQuery:
-                for q in set:
-                    result = get_total_search_results(driver, q)
-                    if result > opposingResults:
-                        opposingResults = result
-                    print("Top opposing result: ", opposingResults)
-                    totalResults += result
-                
             
-            print(normalResults)
-            print(opposingResults)
+        
+        print(normalResults)
+        print(opposingResults)
 
-            weight = normalResults / (normalResults + opposingResults)
-            print(weight)
+        total = normalResults + opposingResults 
+        weight = normalResults / total if total else 0
+
+        print(weight)
+        return weight
     finally:
         driver.quit()
 
-if __name__ == "__main__":
-    main()
+# def main():
+
+#     driver = get_chrome_driver()
+
+#     try:
+#         triplets = get_triplets("triplets.txt")
+
+#         for triplet in triplets[:1]:
+#             query = format_triplet(triplet)
+#             opposingQuery = format_opposing_triplet(triplet)
+
+#             print(query)
+#             print(opposingQuery)
+
+#             normalResults = 0        
+#             opposingResults = 0
+#             totalResults = 0;
+
+#             for q in query:
+#                 result = get_total_search_results(driver, q)
+#                 if result > normalResults:
+#                     normalResults = result
+#                 print("Top normal result: ", normalResults)
+#                 totalResults += result
+
+#             for set in opposingQuery:
+#                 for q in set:
+#                     result = get_total_search_results(driver, q)
+#                     if result > opposingResults:
+#                         opposingResults = result
+#                     print("Top opposing result: ", opposingResults)
+#                     totalResults += result
+                
+            
+#             print(normalResults)
+#             print(opposingResults)
+
+#             weight = normalResults / (normalResults + opposingResults)
+
+#             # TODO: Write to a file the weight
+#             print(weight)
+#     finally:
+#         driver.quit()
+
+# if __name__ == "__main__":
+#     main()
