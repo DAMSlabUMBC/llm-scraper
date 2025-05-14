@@ -28,12 +28,12 @@ from arango import ArangoClient
 # Load environment variables
 load_dotenv()
 
-client = ArangoClient(hosts='http://visionpc01.cs.umbc.edu:8529')
-    
+client = ArangoClient(hosts=os.getenv("HOST_URL"))
+
 db = client.db(
     "_system",
-    username='root',
-    password='MdD5yiJ7sePXrbN5',
+    username=os.getenv("ARRANGODB_USERNAME"),
+    password=os.getenv("ARRANGODB_PASSWORD"),
 )
 
 graph = db.graph("IoT_KG")
