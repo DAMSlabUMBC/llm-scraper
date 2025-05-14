@@ -11,13 +11,18 @@ from datetime import datetime
 #from util.scraper.scrapping_manager import ScrappingManager
 #from util.scraper.content_scraper import scrape_website
 from scrape_with_config import scrape_website
+from validation.search_validation import search_validation_method
+from validation.llm_validation import llm_validation_method
 
 import time
+import requests
 import os
 import logging
 import argparse
+import ast
 from tqdm import tqdm
 import json
+from arango.exceptions import AQLQueryExecuteError
 import ast
 
 # Configure logging
@@ -180,10 +185,37 @@ def main():
 
         triplets_list = []
 
-        for triplet in result_list:
-            default_weight = 0.5
+        # TODO: This should be made into a function either here or in the validation methods
+        for triplet_str in result_list:
+
+            # triplet = ast.literal_eval(triplet_str)
+            triplet = (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee'))
+
+            print("Getting weight")
+            weight = 0
+
+
+            # TODO: These validation methods use google, resulting in capcha
+
+            # Validate with wikidata, does not exist? Use our other validation methods 
+            if weight < 50:
+                try:
+                    weight = search_validation_method(triplet) or 0
+                except Exception:
+                    weight = 0
+            
+            if weight < 50:
+                try:
+                    weight = llm_validation_method(triplet) or 0
+                except Exception:
+                    weight = 0
+
+
+            default_weight = weight
+            print("Triple Weight: ", weight)
             triplets_list.append(f"{triplet} {default_weight} {url} {datetime.now()}")
         
+        print(triplets_list)
         # appends the triplets into designated triplet file
         with open(output_file, "a") as file:
             for triplet in triplets_list:
