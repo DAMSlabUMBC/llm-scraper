@@ -170,7 +170,8 @@ def main():
 
             result_list = parse_string_to_list(generate_result)
             if isinstance(result_list, list):
-                break
+                if not result_list:
+                    break
         
         # returns empty list of triplets if fails to generate entities for number of retries
         if not isinstance(result_list, list):
