@@ -22,12 +22,3 @@ Output:
 }
 
 ---
-
-Input:
-{
-  "product_name": "15A Smart On-Off Iluminated Push Button Light Switch White",
-  "manufacturer": "Ahfiwaso",
-  "about_item": "Wireless remote control for ceiling lights and lamps. Compatible with a variety of lighting fixtures. Easy installation. View More Details"
-}
-
-Output:
