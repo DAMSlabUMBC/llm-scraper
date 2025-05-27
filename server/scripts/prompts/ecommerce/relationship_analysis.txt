@@ -13,12 +13,12 @@ website generate triplets in the format:
 
 **Entity Types:**
 - These are examples only — extract more types as needed:
-device, manufacturer, application, process, sensor, privacyPolicy, category, etc.
+device, manufacturer, application, process, sensor, category, etc.
 
 ###
 **Relationships:**
 These are examples only — generate more as needed:
-developedBy, manufacturedBy, compatibleWith, hasSensor, performs, hasPolicy, statesInPolicy, etc.
+developedBy, manufacturedBy, compatibleWith, hasSensor, performs, etc.
 
 ###
 **Triplet Schema:**
