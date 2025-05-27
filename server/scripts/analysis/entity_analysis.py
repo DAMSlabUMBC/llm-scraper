@@ -15,9 +15,13 @@ RETRIES = 3
 PROMPTS_FOLDER = "prompts"
 OUTPUT_FOLDER = "analysis_output"
 
-ENTITIES_PATTERN = r"^\{'entities': \[(?:'(?:[^']*)'(?:, )?)*\]\}$"
+#ENTITIES_PATTERN = r"^\{'entities': \[(?:'(?:[^']*)'(?:, )?)*\]\}$"
+ENTITIES_PATTERN = r"\[.*?\]"
 
 def analyze_text_elements(text_content, prompt):
+
+    print(f"TEXT CONTENT {text_content}")
+    
     entities_json = {"entities": []}
 
     # initializes ollama client
@@ -31,13 +35,12 @@ def analyze_text_elements(text_content, prompt):
 
         # generates entities given some text_content
         response = client.chat(
-            model='deepseek-r1:70b', 
+            model='mistral:7b-instruct', 
             messages=[
                 {
                     'role': 'system',
                     'content': f"{prompt}",
                 },
-
                 {
                     'role': 'user',
                     'content': str(text_content),
@@ -45,32 +48,40 @@ def analyze_text_elements(text_content, prompt):
             ],
             stream=False
         )
-        
-        #print(f"before parsing {response.message.content}")
-        
-        removed_think_tags = remove_think_tags(response.message.content)
-        
+
+        # Clean and extract the message
+        raw_response = response["message"]["content"]
+        removed_think_tags = remove_think_tags(raw_response)
         removed_json_tags = extract_json(extract_python(removed_think_tags))
 
+        print(f"OUTPUT: {removed_json_tags}")
+
+        # First try: strict JSON parsing
         try:
             parsed = json.loads(removed_json_tags.strip())
-        except json.JSONDecodeError as e:
-            print(f"❌ JSON decoding failed: {e}")
-            parsed = None
-
-        if parsed:
-            # Check structure without regex
             if isinstance(parsed, dict) and "entities" in parsed and isinstance(parsed["entities"], list):
                 if all(isinstance(e, str) for e in parsed["entities"]):
                     entities_json = parsed
-                    break  # Valid output, no need to retry
+                    break  # Valid structured response found
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decoding failed: {e}")
 
-    # If failed after retries
+            # Fallback: use regex to extract list directly
+            list_match = re.search(ENTITIES_PATTERN, removed_json_tags)
+            if list_match:
+                try:
+                    list_str = list_match.group()
+                    entity_list = json.loads(list_str.replace("'", '"'))  # convert to valid JSON list if needed
+                    if isinstance(entity_list, list) and all(isinstance(e, str) for e in entity_list):
+                        entities_json["entities"] = entity_list
+                        break
+                except Exception as fallback_err:
+                    print(f"⚠️ Regex-based fallback failed: {fallback_err}")
+
     if entities_json == {"entities": []}:
         print("⚠️ No valid entities extracted after retries.")
 
-    print(entities_json)
-    
+    print(f"ENTITIES: {entities_json}")
     return entities_json
 
 def parse_content_line(line):
