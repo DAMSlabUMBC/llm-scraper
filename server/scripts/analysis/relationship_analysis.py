@@ -16,12 +16,20 @@ RETRIES = 3
 PROMPTS_FOLDER = "prompts"
 OUTPUT_FOLDER = "analysis_output"
 
+TRIPLET_PATTERN = r"""
+\(\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*,      # Subject
+\s*['"]([^'"]+)['"]\s*,                                      # Predicate
+\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\)       # Object
+"""
+
 def generate(entities, prompt):
     """
     generates triplets given a json of entities
     Input: entities ({"entities": [...]})
     Output: list of triplets ([...])
     """
+    print(f"ENTITIES: {entities}")
+
     
     # initializes ollama client
     client = ollama.Client()
@@ -49,7 +57,20 @@ def generate(entities, prompt):
     
     # removes think, json, and python tags
     removed_think_tags = remove_think_tags(response.message.content)
-    return extract_python(extract_json(removed_think_tags))
+    remove_python_tags = extract_python(extract_json(removed_think_tags))
+
+    print(f"EXTRACTED TRIPLETS: {remove_python_tags}")
+
+    matches = re.findall(TRIPLET_PATTERN, remove_python_tags, flags=re.VERBOSE)
+
+    triplets = [
+        ((subj_type, subj_ent), pred, (obj_type, obj_ent))
+        for subj_type, subj_ent, pred, obj_type, obj_ent in matches
+    ]
+
+    print(f"TRIPLETS {triplets}")
+
+    return str(triplets)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="testing the effectiveness of the prompt")
@@ -88,7 +109,8 @@ if __name__ == "__main__":
         
                 result_list = parse_string_to_list(generate_result)
                 if isinstance(result_list, list):
-                    break
+                    if result_list != []:
+                        break
             
             # returns empty list of triplets if fails to generate entities for number of retries
             if not isinstance(result_list, list):
