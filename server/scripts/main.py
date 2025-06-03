@@ -5,6 +5,7 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 from analysis.iot_classification import product_classify
 from util.llm_utils.response_cleaner import parse_string_to_list
+from util.scraper.content_cleaner import deduplicate_content
 from KG import createKG
 from datetime import datetime
 
@@ -104,6 +105,8 @@ def main():
         # if text_content == "{}":
         #     logging.error(f"Error extracting contents from {url}")
         #     continue
+
+        text_content = deduplicate_content(text_content)
 
         print(text_content)
 

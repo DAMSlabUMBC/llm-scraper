@@ -5,8 +5,10 @@ Return only JSON in this format:
 
 Do not add any explanations, reasoning, or extra text.
 
-Entities must include the full product name.
+Entities must include but are not limited to the following:
+full product name, manufacturer, and device type.
 
+These are just examples. Extract more entities as needed.
 ---
 
 Input:

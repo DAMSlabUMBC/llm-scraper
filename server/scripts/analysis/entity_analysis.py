@@ -35,7 +35,7 @@ def analyze_text_elements(text_content, prompt):
 
         # generates entities given some text_content
         response = client.chat(
-            model='mistral:7b-instruct', 
+            model='deepseek-r1:70b', 
             messages=[
                 {
                     'role': 'system',

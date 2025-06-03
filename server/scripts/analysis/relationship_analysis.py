@@ -17,18 +17,18 @@ PROMPTS_FOLDER = "prompts"
 OUTPUT_FOLDER = "analysis_output"
 
 TRIPLET_PATTERN = r"""
-\(\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*,      # Subject
-\s*['"]([^'"]+)['"]\s*,                                      # Predicate
-\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\)       # Object
+\(\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*\)\s*,      # Subject
+\s*['"`]([^'"`]+)['"`]\s*,                                      # Predicate
+\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*\)\)       # Object
 """
 
-def generate(entities, prompt):
+def generate(text_content, prompt):
     """
     generates triplets given a json of entities
     Input: entities ({"entities": [...]})
     Output: list of triplets ([...])
     """
-    print(f"ENTITIES: {entities}")
+    print(f"TEXT CONTENT: {text_content}")
 
     
     # initializes ollama client
@@ -47,7 +47,7 @@ def generate(entities, prompt):
             },
             {
                 'role': 'user',
-                'content': entities,
+                'content': text_content,
             },
         ],
         stream=False
@@ -67,6 +67,17 @@ def generate(entities, prompt):
         ((subj_type, subj_ent), pred, (obj_type, obj_ent))
         for subj_type, subj_ent, pred, obj_type, obj_ent in matches
     ]
+
+    # fallback: converts the string to a python list
+    if triplets == []:
+        print("attempting fallback: convert to python list")
+        try:
+            triplets = ast.literal_eval(remove_python_tags)
+            print("Extracted triplets successfully:")
+            # for triplet in extracted_triplets:
+            #     print(triplet)
+        except Exception as e:
+            print("Failed to parse triplets:", e)
 
     print(f"TRIPLETS {triplets}")
 
