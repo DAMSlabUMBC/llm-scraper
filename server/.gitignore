@@ -6,4 +6,12 @@ env/
 
 TODO.md
 
+# .ipynb_checkpoints
 scripts/prompts/ecommerce/.ipynb_checkpoints/
+scripts/.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# pycache
+scripts/util/scraper/__pycache__/
+scripts/util/llm_utils/__pycache__/
+scripts/util/__pycache__/
