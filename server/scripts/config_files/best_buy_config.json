@@ -7,7 +7,7 @@
     },
     "temp_urls": "bestbuy_urls.txt",
     "official_urls": "unique_best_buy_urls.txt",
-    "text_content": {
+    "text": {
         "product_name": ["h1.h4", "h1.heading-4.leading-6.font-500"],
         "manufacturer": ["a.c-button-link", "div.pb-200", "a.c-button-link", "div.pb-200.body-copy"],
         "highlights": ["div.mb-200.pb-200.mt-50.v-bg-pure-white", "div.body-copy-lg.pt-200.pb-300.OPY7xNPkM88Vl3xh.hkwiWgBO0cUEDSdm"],

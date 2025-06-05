@@ -20,63 +20,14 @@ import threading
 from urllib.parse import urlparse
 import time
 
+import re
+
 from transformers import BartForSequenceClassification, BartTokenizer
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-mnli')
 model = BartForSequenceClassification.from_pretrained('facebook/bart-large-mnli')
 
 # Load environment variables
 load_dotenv()
-
-def get_urls(query):
-    result = []
-    seen = set()
-
-    excluded_domains = {
-        "www.google.com",
-        "accounts.google.com",
-        "support.google.com",
-        "policies.google.com",
-        "search.app.goo.gl",
-        "maps.google.com",
-    }
-    
-    excluded_paths = {
-        "/search",
-        "/advanced_search",
-        "/ServiceLogin",
-    }
-
-    driver = get_chrome_driver()
-    driver.get('https://www.google.com')
-    wait = WebDriverWait(driver, 10)
-
-    search = driver.find_element("name", "q")
-    search.send_keys(query)
-    search.send_keys(Keys.RETURN)
-    anchor_elements = wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))
-    count = 0
-    for element in anchor_elements:
-        try:
-            href = element.get_attribute("href")
-        except StaleElementReferenceException:
-            continue  # Skip stale elements
-        if href is None:
-            continue
-        parsed = urlparse(href)
-        domain = parsed.netloc
-        path = parsed.path
-        if domain not in excluded_domains and path not in excluded_paths:
-            if href not in seen:
-                print(href)
-                result.append(href)
-                seen.add(href)
-                count += 1
-        if count >= 5:
-            break
-
-    time.sleep(5)
-    driver.quit()
-    return result
 
 def get_triplets(filename):
     """
@@ -104,62 +55,72 @@ def format_triplet(triplet):
     subject, predicate, obj = triplet
     return f"{subject[1]} {predicate} {obj[1]}" 
 
-def compute_semantic_similarity(query, text):
-    """
-    Computes the semantic similarity between the query and the snippet using SBERT embeddings.
+def get_urls(query, max_results=5):
+    driver = get_chrome_driver()
+    driver.get('https://www.google.com')
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "q")))
 
-    :param query: Query string.
-    :param text: Search result snippet.
-    :return: Cosine similarity score (0 to 100%).
-    """
-    # Pose sequence as a NLI premise and label (politics) as a hypothesis
-    premise = text
-    hypothesis = f"This text is about {query}"
+    search = driver.find_element("name", "q")
+    search.send_keys(query, Keys.RETURN)
+    anchors = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))
 
-    # Run through model pre-trained on MNLI with truncation
-    input_ids = tokenizer.encode(premise, hypothesis, return_tensors='pt',
-                                   truncation=True, max_length=1024)
-    logits = model(input_ids)[0]
+    urls, seen = [], set()
+    for a in anchors:
+        href = a.get_attribute("href")
+        if not href or href in seen:
+            continue
+        parsed = urlparse(href)
+        if parsed.netloc.startswith("www.google.com"):
+            continue
+        urls.append(href); seen.add(href)
+        if len(urls) >= max_results:
+            break
 
-    # We throw away "neutral" (dim 1) and take the probability of "entailment" (index 1)
-    entail_contradiction_logits = logits[:, [0, 2]]
-    probs = entail_contradiction_logits.softmax(dim=1)
-    true_prob = probs[:, 1].item() * 100
-    print(f'Probability that the label is true: {true_prob:0.2f}%')
+    driver.quit()
+    return urls
 
-    return 69  # Placeholder value
+def entailment_score(premise: str, hypothesis: str) -> float:
+    """Return entailment % from BART-MNLI."""
+    inputs = tokenizer.encode(premise, hypothesis, return_tensors='pt',
+                              truncation=True, max_length=1024)
+    logits = model(inputs)[0]
+    # logits dims: [batch, 3] → [contradiction, neutral, entailment]
+    # we pick indices [0, 2] then softmax → entailment prob
+    entail_contra = logits[:, [0, 2]]
+    probs = entail_contra.softmax(dim=1)
+    return probs[:, 1].item() * 100
 
-def main():
-    triplets = get_triplets("triplets.txt")
+def llm_validation_method(triple):
+    subject, predicate, obj = triple
+    query = f"{subject[1]} {predicate} {obj[1]}"
+    urls = get_urls(query)
 
-    for triplet in triplets[:2]:
-        query = format_triplet(triplet)
-        urls = get_urls(query)
+    print(f"\n🔍 Query: {query}")
+    all_scores = []
 
-        print(f"\n🔍 **Query:** {query}")
+    for url in urls:
+        print("Visiting:", url)
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        text = "\n".join(elem.get_text() for elem in soup.find_all(['p','span','h1','h2','h3']))
 
-        for url in urls:
-            # Get text content from url
-            page = requests.get(url)
-            soup = BeautifulSoup(page.content, 'html.parser')
-            text_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p'])
-            text_content = '\n'.join([elem.get_text() for elem in text_elements])
+        # 1) exact‐match regex check
+        if re.search(r"manufactur.*Govee", text, re.IGNORECASE):
+            print("→ Found direct “manufactured by Govee” match in raw text.")
+            return 100.0
 
-            # Pose sequence as a NLI premise and label (politics) as a hypothesis
-            premise = text_content
-            hypothesis = query
+        # 2) split into sentences to focus NLI on smaller chunks
+        sentences = re.split(r'(?<=[\.\?\!])\s+', text)
+        for sent in sentences:
+            if len(sent) < 20:
+                continue   # skip very short fragments
+            score = entailment_score(sent, query)
+            all_scores.append(score)
 
-            # Run through model pre-trained on MNLI with truncation to avoid token length issues
-            input_ids = tokenizer.encode(premise, hypothesis, return_tensors='pt',
-                                           truncation=True, max_length=1024)
-            logits = model(input_ids)[0]
+    if not all_scores:
+        print("No candidate sentences found; returning 0%.")
+        return 0.0
 
-            # We throw away "neutral" (dim 1) and take the probability of "entailment" (index 1)
-            entail_contradiction_logits = logits[:, [0, 2]]
-            probs = entail_contradiction_logits.softmax(dim=1)
-            true_prob = probs[:, 1].item() * 100
-
-            print("Probability: ", true_prob)
-
-if __name__ == "__main__":
-    main()
+    final_score = max(all_scores)
+    print(f"Aggregated entailment probability: {final_score:0.2f}%")
+    return final_score
