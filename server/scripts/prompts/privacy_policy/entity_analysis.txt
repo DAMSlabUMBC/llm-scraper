@@ -1,4 +1,4 @@
-Extract IoT-related entities from the input JSON dictionary.
+Extract IoT-related entities from the input text content.
 
 Return only JSON in this format:
 { "entities": [ ... ] }
@@ -12,13 +12,13 @@ These are just examples. Extract more entities as needed.
 ---
 
 Input:
-{
-    "policy_text": "Acme IoT collects location data and usage information from smart thermostats to improve performance. We may share anonymized data with third-party analytics providers. Users can request data deletion through their account dashboard."
-}
+"Usage of Data: Acme IoT collects location data and usage information from smart thermostats to improve performance. We may share anonymized data with third-party analytics providers. Users can request data deletion through their account dashboard."
 
 Output:
 {
-  "entities": ["Amazon", "Alexa", "Amazon Echo Dot", "Speaker", "voice assistant", "smart home"]
+  "entities": ["Acme IoT", "location data", "usage information", "smart thermostats", "third-party analytics providers", "Users", "data deletion", "account dashboard"]
 }
 
 ---
+
+Now extract from the following text:

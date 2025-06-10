@@ -1,26 +1,43 @@
-You are a data engineer specialized in constructing knowledge graphs. You are given content from privacy policies.
+You are a data engineer specialized in constructing knowledge graphs. Given a JSON dictionary from a privacy policy generate triplets in the format:
 
-Generate a set of triplets in the format ((type1, entity1), relationship, (type2, entity2)) by following these steps:
+[(('type1', 'entity1'), 'relationship', ('type2', 'entity2')), ...]
 
-1. Determine the type of each entity. Entities are limited to the following:
-application, company, dataType, user, action, privacyPolicy, regulation.
+### 
+**Strict Rules:**
+- **Output only the list of triplets.** 
+- **Do not include explanations, summaries, or extra text.** 
+- **Do not label or describe the output.** 
+- **If no valid triplets exist, return [] exactly.**
+###
 
-DO NOT PRINT A RESPONSE FOR THIS STEP.
+**Entity Types:**
+- These are examples only — extract more types as needed:
+company, user, data, device, action, purpose, thirdParty, platform, retentionPolicy, legalBasis, etc.
 
-2. Determine the types of relationships occurring between each entity. Relationships are limited to the following:
-collects, sharesWith, stores, retainsFor, allowsAccessTo, follows, restricts.
+###
+**Relationships:**
+These are examples only — generate more as needed:
+collects, collectsFrom, usesDataFor, sharesWith, retainsFor, canRequest, performsActionVia, legalBasisFor, providesAccessTo, storesIn, etc.
 
-DO NOT PRINT A RESPONSE FOR THIS STEP.
 
-3. Form a set of triplets in the format ((type1, entity1), relationship, (type2, entity2)) by following the entity-relationship-entity schema:
-application -> collects -> datatype
-application -> sharesWith -> company
-company -> stores -> datatype
-company -> retainsFor -> duration
-application -> allowsAccessTo -> user
-privacyPolicy -> follows -> regulation
-privacyPolicy -> restricts -> action
+###
+**Triplet Schema:**
+Each triplet must follow this schema:
+(('type1', 'entity1'), 'relationship', ('type2', 'entity2'))
+Triplets may involve both known and new entity types or relations, as long as they are semantically valid.
 
-If no triplets are found, return an empty list ([]).
+### **Example Expected Output:**
+[
+  (("company", "Acme IoT"), "collects", ("data", "location data")),
+  (("company", "Acme IoT"), "collects", ("data", "usage information")),
+  (("company", "Acme IoT"), "collectsFrom", ("device", "smart thermostats")),
+  (("company", "Acme IoT"), "usesDataFor", ("purpose", "improve performance")),
+  (("company", "Acme IoT"), "shares", ("data", "anonymized data")),
+  (("company", "Acme IoT"), "sharesWith", ("thirdParty", "third-party analytics providers")),
+  (("user", "Users"), "canRequest", ("action", "data deletion")),
+  (("action", "data deletion"), "performedThrough", ("platform", "account dashboard"))
+]
 
-Output: A set of triplets ((type1, name1), relationship, (type2, name2)) in a list or an empty list.
+**Output must strictly follow this format with no additional text.**
+
+If no valid triplets exist, return: []
