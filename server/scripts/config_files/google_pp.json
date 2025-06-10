@@ -3,5 +3,10 @@
     "privacy_policy": {
         "text_content": "div[id=\"main-content\"]"
     },
-    "extracted_content": "extracted_google_pp.txt"
+    "type": "privacy_policy",
+    "extracted_content": "extracted_google_pp.txt",
+    "keywords": {
+        "company": "Google",
+        "services": "Google Services"
+    }
 }
