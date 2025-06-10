@@ -22,14 +22,17 @@ TRIPLET_PATTERN = r"""
 \s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*\)\)       # Object
 """
 
-def generate(text_content, prompt):
+def generate(entities, prompt, text=""):
     """
     generates triplets given a json of entities
     Input: entities ({"entities": [...]})
     Output: list of triplets ([...])
     """
-    print(f"TEXT CONTENT: {text_content}")
-
+    #print(f"ENTITIES: {entities}")
+    if text != "":
+        text_content = f"{text} entities: {entities}"
+    else:
+        text_content = str(entities)
     
     # initializes ollama client
     client = ollama.Client()
@@ -47,7 +50,7 @@ def generate(text_content, prompt):
             },
             {
                 'role': 'user',
-                'content': text_content,
+                'content': str(text_content),
             },
         ],
         stream=False
