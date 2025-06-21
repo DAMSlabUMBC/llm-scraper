@@ -74,11 +74,11 @@ def generate(entities, prompt, text=""):
     # fallback: converts the string to a python list
     if triplets == []:
         print("attempting fallback: convert to python list")
+
+        # converts the generated triplets into a python list
         try:
             triplets = ast.literal_eval(remove_python_tags)
             print("Extracted triplets successfully:")
-            # for triplet in extracted_triplets:
-            #     print(triplet)
         except Exception as e:
             print("Failed to parse triplets:", e)
 
@@ -132,4 +132,3 @@ if __name__ == "__main__":
         
             print('[😻] Final Response: ', result_list)
             f.write(f"{entities} | {url} | {result_list}\n")
-    pass

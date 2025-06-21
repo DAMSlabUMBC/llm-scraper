@@ -12,6 +12,9 @@ from analysis.entity_analysis import analyze_text_elements
 from analysis.relationship_analysis import generate
 import ast
 from util.llm_utils.response_cleaner import parse_string_to_list
+from datetime import datetime
+
+from validation_pipeline import validation
 
 CONFIGS_FOLDER = "config_files"
 PROMPTS_FOLDER = "prompts"
@@ -40,13 +43,6 @@ def flush_extracted_text(extracted_text):
             key = content
             value = ""
         prev = tag
-    
-    #print(f"TEXT CONTENT {text_content}")
-
-    # for tag in text_content:
-    #     #print(f"{tag} {text_content[tag]}")
-    #     print(f"TAG {tag}")
-    #     print(f"CONTENT: {text_content[tag]}")
 
     return text_content
 
@@ -133,10 +129,6 @@ def clean_triples(triples, configs):
 
         new_pred = pred
 
-        # print(f"SUBJECT {subj}")
-        # print(f"PREDICATE {pred}")
-        # print(f"OBJECT {obj}")
-
         # splits subject by entity type and same
         subj_type, subj_name = subj[0], subj[1]
         new_subj_type = subj_type
@@ -158,6 +150,71 @@ def clean_triples(triples, configs):
         new_triples.append(new_triple)
 
     return new_triples
+
+
+def extract_triples_pp(configs, output_file, entity_prompt, relationship_prompt):
+
+    # gets the privacy policy's url from the config file
+    url = configs["home_url"]
+
+    # extracts all the text content from the privacy policy
+    text_content = scrape_website(url, configs)
+
+    count = 0
+
+    for tag in tqdm(text_content):
+        text = f"{tag}: {text_content[tag]}"
+        #print(text)
+        entities = analyze_text_elements(text, entity_prompt)
+
+        # generates triplets for number of retries
+        for i in range(RETRIES):
+
+            # generates triplets
+            generate_result = generate(str(entities), relationship_prompt, text)
+
+            result_list = parse_string_to_list(generate_result)
+            if isinstance(result_list, list):
+                if result_list != []:
+                    break
+        
+        # returns empty list of triplets if fails to generate entities for number of retries
+        if not isinstance(result_list, list):
+            result_list = []
+            count += 1
+
+        print(f"TRIPLES BEFORE: {result_list}")
+
+        result_list = clean_triples(result_list, configs)
+
+        print('[😻] Final Response: ', result_list)
+
+        triplets_list = []
+
+        # TODO: This should be made into a function either here or in the validation methods
+        for triplet_str in result_list:
+
+            triplet = triplet_str
+            print("Getting weight")
+
+
+            # TODO: These validation methods use google, resulting in capcha
+
+            # Validate with wikidata, does not exist? Use our other validation methods 
+
+            weight = validation(triplet)
+
+
+            default_weight = weight
+            print("Triple Weight: ", weight)
+            triplets_list.append(f"{triplet} {default_weight} {url} {datetime.now()}")
+    
+        print(triplets_list)
+        # appends the triplets into designated triplet file
+        with open(output_file, "a") as file:
+            for triplet in triplets_list:
+                file.writelines(str(triplet))
+                file.write("\n")
 
     
 if __name__ == "__main__":
@@ -190,15 +247,7 @@ if __name__ == "__main__":
 
     url = configs["home_url"]
 
-    # text_content = scrape_website(url, configs)
-
-    # for tag in text_content:
-    #     print(f"T: {tag}")
-    #     print(f"C: {text_content[tag]}")
-
     extract_file = configs["extracted_content"]
-    # with open(extract_file, "w", encoding="utf-8") as f:
-    #     f.write(f"{text_content} {url}")
 
     with open(extract_file, "r", encoding="utf-8") as f:
         content = f.read()

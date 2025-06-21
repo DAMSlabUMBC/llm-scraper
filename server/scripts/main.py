@@ -1,19 +1,10 @@
 import sys
 sys.dont_write_bytecode = True
-from analysis.image_analysis import analyze_image_elements
-from analysis.entity_analysis import analyze_text_elements
-from analysis.relationship_analysis import generate
-from analysis.iot_classification import product_classify
-from util.llm_utils.response_cleaner import parse_string_to_list
-from util.scraper.content_cleaner import deduplicate_content
 from KG import createKG
 from datetime import datetime
 
-#from util.scraper.scrapping_manager import ScrappingManager
-#from util.scraper.content_scraper import scrape_website
-from scrape_with_config import scrape_website
-from validation.search_validation import search_validation_method
-from validation.llm_validation import llm_validation_method
+from scrape_eccomerce import extract_triples_ecommerce
+from scrape_pp import extract_triples_pp
 
 import time
 import requests
@@ -38,35 +29,29 @@ AmazonModule = "Amazon"
 CONFIGS_FOLDER = "config_files"
 PROMPTS_FOLDER = "prompts"
 
-RETRIES = 3
+
 
 def main():
-    video_content = ""
-    code_content = "[]"
-    image_content = []
-    text_content = "{}"
-
-    text_result = {"entities": []}
-    image_result = {"entities": []}
-    video_result = {"entities": []}
-    code_result = {"entities": []}
-
     # initializes argument parser
     parser = argparse.ArgumentParser(description="Process an input file and save output.")
     
     # Adding input and output arguments
     parser.add_argument("--config_file", required=True, help="json with configurations to a specific site")
-    parser.add_argument("--batch_file", required=True, help="path to obtain the batch urls")
     parser.add_argument("--output_file", required=True, help="Path to save the output file")
-    parser.add_argument("--ollama_port", type=int, help="Port number for Ollama")
+    parser.add_argument("--batch_file", required=False, help="path to obtain the batch urls", default="None")
+    parser.add_argument("--ollama_port", required=False, type=int, help="Port number for Ollama", default=0)
 
     # parses the arguments
     args = parser.parse_args()
 
-    # sets the input and output files
+    # sets the required arguments
     config_file = args.config_file
-    batch_file = args.batch_file
     output_file = args.output_file
+    
+
+    # sets the optional arguments
+    if args.batch_file != "None":
+        batch_file = args.batch_file
     #extracted_file = args.extracted_file
 
     # extracts the contents of the configs file
@@ -87,14 +72,25 @@ def main():
     #     text_contents = f.readlines()
 
     # gets the product_urls from the batch
-    with open(batch_file, "r") as f:
+    """with open(batch_file, "r") as f:
         #product_urls = f.readlines()
-        extracted_content = f.readlines()
+        extracted_content = f.readlines()"""
 
     start_time = time.time()
+
+    # extracts triples from privacy policy
+    if configs["type"] == "privacy_policy":
+        extract_triples_pp(configs, output_file, entity_prompt, relationship_prompt)
+    
+    # extracts triples from eccomerce site
+    elif configs["type"] == "ecommerce":
+        extract_triples_ecommerce(configs, output_file, batch_file, entity_prompt, relationship_prompt)
+
+
+    
     
     # iterates through each url
-    for content in tqdm(extracted_content):
+    """for content in tqdm(extracted_content):
 
         content = content.strip()
         #url = url.strip()
@@ -114,11 +110,6 @@ def main():
         text_content = deduplicate_content(text_content)
 
         print(text_content)
-
-        # with open(output_file, "a") as file:
-        #     file.writelines(str(text_content))
-        #     file.write("\n")
-        # continue
 
         # checks if the device is IoT (eccomerce)
         if configs["type"] =="ecommerce":
@@ -192,8 +183,8 @@ def main():
         # TODO: This should be made into a function either here or in the validation methods
         for triplet_str in result_list:
 
-            # triplet = ast.literal_eval(triplet_str)
-            triplet = (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee'))
+            triplet = ast.literal_eval(triplet_str)
+            #triplet = (('device', 'Govee Smart Light Bulbs'), 'manufacturedBy', ('manufacturer', 'Govee'))
 
             print("Getting weight")
             weight = 0
@@ -202,6 +193,7 @@ def main():
             # TODO: These validation methods use google, resulting in capcha
 
             # Validate with wikidata, does not exist? Use our other validation methods 
+
             if weight < 50:
                 try:
                     weight = search_validation_method(triplet) or 0
@@ -224,7 +216,7 @@ def main():
         with open(output_file, "a") as file:
             for triplet in triplets_list:
                 file.writelines(str(triplet))
-                file.write("\n")
+                file.write("\n")"""
                 
     end_time = time.time()
     

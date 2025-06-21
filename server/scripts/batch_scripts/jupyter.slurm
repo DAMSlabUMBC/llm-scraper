@@ -8,7 +8,7 @@
 #SBATCH --job-name jupyter 
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=L40S             # Specific hardware constraint
-#SBATCH --nodelist=g24-03
+#SBATCH --nodelist=g24-08
 #SBATCH --output=jupyter_output/jupyter-%j.out
 #SBATCH --error=jupyter_error/jupyter-%j.err
 #SBATCH --time=5:00:00
