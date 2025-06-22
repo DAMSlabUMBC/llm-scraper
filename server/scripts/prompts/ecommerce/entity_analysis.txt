@@ -5,8 +5,10 @@ Return only JSON in this format:
 
 Do not add any explanations, reasoning, or extra text.
 
-Entities must include the full product name.
+Entities must include but are not limited to the following:
+full product name, manufacturer, and device type.
 
+These are just examples. Extract more entities as needed.
 ---
 
 Input:
@@ -22,12 +24,3 @@ Output:
 }
 
 ---
-
-Input:
-{
-  "product_name": "15A Smart On-Off Iluminated Push Button Light Switch White",
-  "manufacturer": "Ahfiwaso",
-  "about_item": "Wireless remote control for ceiling lights and lamps. Compatible with a variety of lighting fixtures. Easy installation. View More Details"
-}
-
-Output:

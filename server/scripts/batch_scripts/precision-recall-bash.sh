@@ -3,14 +3,14 @@
 #SBATCH --cluster=chip-gpu
 #SBATCH --account=pi_ryus
 #SBATCH --partition=gpu
-#SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
+#SBATCH --job-name=p_r_f1             # Job name to appear in the SLURM queue
 #SBATCH --array=1-4                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
 #SBATCH --mem=64GB                        # Memory allocation in MB (150 GB)
 #SBATCH --time=72:00:00                     # Maximum runtime for the job (70 hours)
 #SBATCH --constraint=L40S              # Specific hardware constraint
-#SBATCH --nodelist=g24-08              # Specific node to run jobs on
+#SBATCH --nodelist=g24-01              # Specific hardware constraint
 #SBATCH --gres=gpu:1                        # Request 1 GPU for the job
 #SBATCH --output=llm-scraper_output/llm-scraper_%A_%a.out       # Output log (include %A for job ID, %a for array index)
 #SBATCH --error=llm-scraper_error/llm-scraper_%A_%a.err        # Error log
@@ -51,7 +51,7 @@ echo "loaded all necessary modules"
 conda init
 source ~/.bashrc
 conda activate test_env2
-pip list | grep playwright
+# pip list | grep playwright
 
 conda list
 
@@ -71,8 +71,8 @@ echo "OLLAMA_HOST=${OLLAMA_HOST}"
 echo $OLLAMA_HOST
 
 # sets playwright
-export PLAYWRIGHT_BROWSERS_PATH=/umbc/ada/ryus/users/gsantos2/tools/playwright_browsers
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+# export PLAYWRIGHT_BROWSERS_PATH=/umbc/ada/ryus/users/gsantos2/tools/playwright_browsers
+# export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 # Start *this task's* Ollama server in the background, on a unique port
 # OLLAMA_TMPDIR=/nfs/ada/ryus/users/sbelon1/ollama_temp/ArrOll \  #this should be the path to your soft link
@@ -83,8 +83,9 @@ ollama serve &
 sleep 10
 
 # (Optional) Pre-pull required models
-ollama pull deepseek-r1:70b
-ollama pull llava:34b
+# ollama pull deepseek-r1:70b
+# ollama pull llava:34b
+ollama pull mistral:7b-instruct
 
 echo "Model pulling complete. Starting Python script execution..."
 
@@ -101,10 +102,11 @@ python --version
 sleep 10
 
 # Use python to run queries
-python main.py \
-  --config_file="samsclub_config.json" \
-  --batch_file="extracted_samsclub/batch_${SLURM_ARRAY_TASK_ID}.txt" \
-  --output_file="samsclub_triplets_5.0/triplets_${SLURM_ARRAY_TASK_ID}.txt" \
+python precision_recall.py \
+  --extracted_file="extracted_samsclub/batch_${SLURM_ARRAY_TASK_ID}.txt" \
+  --triplets_file="samsclub_triplets_5.0/triplets_${SLURM_ARRAY_TASK_ID}.txt" \
+  --preprocessed_file="precision_recall_test/samsclub_5.0/preprocessed/preprocessed_${SLURM_ARRAY_TASK_ID}.txt" \
+  --output_file="precision_recall_test/samsclub_5.0/results/results7_${SLURM_ARRAY_TASK_ID}.txt" \
   --ollama_port="${PORT}"
 
 

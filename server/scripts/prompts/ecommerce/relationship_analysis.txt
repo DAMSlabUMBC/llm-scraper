@@ -13,12 +13,12 @@ website generate triplets in the format:
 
 **Entity Types:**
 - These are examples only — extract more types as needed:
-device, manufacturer, application, process, sensor, privacyPolicy, category, etc.
+device, manufacturer, application, process, sensor, category, etc.
 
 ###
 **Relationships:**
 These are examples only — generate more as needed:
-developedBy, manufacturedBy, compatibleWith, hasSensor, performs, hasPolicy, statesInPolicy, etc.
+developedBy, manufacturedBy, compatibleWith, hasSensor, performs, etc.
 
 ###
 **Triplet Schema:**
@@ -32,8 +32,6 @@ Triplets may involve both known and new entity types or relations, as long as th
   (('device', 'Govee Smart Light Bulbs'), 'compatibleWith', ('application', 'Alexa')),
   (('device', 'Govee Smart Light Bulbs'), 'isCategory', ('category', 'Smart Lighting')),
   (('device', 'Govee Smart Light Bulbs'), 'hasSensor', ('sensor', 'WiFi')),
-  (('application', 'Alexa'), 'hasPolicy', ('privacyPolicy', 'Google Privacy Policy')),
-  (('privacyPolicy', 'Google Privacy Policy'), 'follows', ('regulation', 'General Data Protection Regulation (GDPR)')),
   (('device', 'Govee Smart Light Bulbs'), 'includesFeature', ('feature', 'Color Control')),
   (('device', 'Govee Smart Light Bulbs'), 'supportsProtocol', ('protocol', 'Zigbee'))
 ]

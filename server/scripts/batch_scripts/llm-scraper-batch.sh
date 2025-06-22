@@ -4,13 +4,13 @@
 #SBATCH --account=pi_ryus
 #SBATCH --partition=gpu
 #SBATCH --job-name=llm-scraper              # Job name to appear in the SLURM queue
-#SBATCH --array=1-4                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mail-user=gsantos2@umbc.edu       # Email for job notifications (replace with your email)
 #SBATCH --mail-type=END,FAIL                # Notify on job completion or failure
+#SBATCH --array=1-4                       # Run array tasks 0..999 (i.e. 1000 tasks)
 #SBATCH --mem=64GB                        # Memory allocation in MB (150 GB)
 #SBATCH --time=72:00:00                     # Maximum runtime for the job (70 hours)
 #SBATCH --constraint=L40S              # Specific hardware constraint
-#SBATCH --nodelist=g24-08              # Specific node to run jobs on
+#SBATCH --nodelist=g24-06              # Specific node to run jobs on
 #SBATCH --gres=gpu:1                        # Request 1 GPU for the job
 #SBATCH --output=llm-scraper_output/llm-scraper_%A_%a.out       # Output log (include %A for job ID, %a for array index)
 #SBATCH --error=llm-scraper_error/llm-scraper_%A_%a.err        # Error log
@@ -101,11 +101,19 @@ python --version
 sleep 10
 
 # Use python to run queries
+
+# EXAMPLE FOR SCRAPING ECOMMERCE
 python main.py \
   --config_file="samsclub_config.json" \
   --batch_file="extracted_samsclub/batch_${SLURM_ARRAY_TASK_ID}.txt" \
-  --output_file="samsclub_triplets_5.0/triplets_${SLURM_ARRAY_TASK_ID}.txt" \
+  --output_file="samsclub_triplets_6.0/triplets_${SLURM_ARRAY_TASK_ID}.txt" \
   --ollama_port="${PORT}"
+
+# EXAMPLE FOR SCRAPING PRIVACY POLICIES
+# python main.py \
+#     --config_file="google_pp.json" \
+#     --output_file="google_pp_triplets_4.0.txt" \
+#     --ollama_port="${PORT}"
 
 
 echo "Python script done for task ${SLURM_ARRAY_TASK_ID}."
