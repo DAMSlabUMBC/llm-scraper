@@ -66,16 +66,6 @@ def main():
     with open(os.path.join(PROMPTS_FOLDER, configs["type"], "relationship_analysis.txt"), "r", encoding="utf-8") as f:
         relationship_prompt = f.read()
 
-    # gets the product_urls from the batch
-    # with open(extracted_file, "r") as f:
-    #     #product_urls = f.readlines()
-    #     text_contents = f.readlines()
-
-    # gets the product_urls from the batch
-    """with open(batch_file, "r") as f:
-        #product_urls = f.readlines()
-        extracted_content = f.readlines()"""
-
     start_time = time.time()
 
     # extracts triples from privacy policy
@@ -84,7 +74,10 @@ def main():
     
     # extracts triples from eccomerce site
     elif configs["type"] == "ecommerce":
-        extract_triples_ecommerce(configs, output_file, batch_file, entity_prompt, relationship_prompt)
+        if batch_file != "None":
+            extract_triples_ecommerce(configs, output_file, batch_file, entity_prompt, relationship_prompt)
+        else:
+            print("ERROR: MUST INCLUDE BATCH FILE FOR ECOMMERCE SCRAPING")
 
 
     
