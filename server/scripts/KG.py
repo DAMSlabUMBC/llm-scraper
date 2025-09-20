@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from arango import ArangoClient
 from tqdm import tqdm
 import re
-import matplotlib.pyplot as plt
 import ast
 
 
