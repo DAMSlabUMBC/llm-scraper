@@ -5,7 +5,7 @@ This section explains how to set up and access **ArangoDB** for our project.
 
 Prerequisites
 -------------
-- Docker installed (`Get Docker <https://www.docker.com/get-started/>`_)
+- Install `Docker <https://www.docker.com/get-started/>`_
 - Access to UMBC Wi-Fi or UMBC GlobalProtect VPN
 
 Local Setup with Docker
@@ -16,23 +16,31 @@ We use the official ArangoDB Docker image. You can find it here:
 
 Steps:
 
-1. Pull the image::
+1. Pull the image:
     
-    docker pull arangodb
+    .. code-block:: bash
 
-2. Run the container (example)::
+        docker pull arangodb
 
-    docker run -d -p 8529:8529 -e ARANGO_RANDOM_ROOT_PASSWORD=1 --name arangodb-instance arangodb
+2. Run the container (example):
 
-3. Verify that it's running::
+    .. code-block:: bash
 
-    docker ps
+        docker run -d -p 8529:8529 -e ARANGO_RANDOM_ROOT_PASSWORD=1 --name arangodb-instance arangodb
+
+3. Verify that it's running:
+
+    .. code-block:: bash
+
+        docker ps
     
 This will list all active containers. Look for ``arangodb-instance``.
 
-4. Find your randomly generated password (run locally)::
+4. Find your randomly generated password (run locally):
 
-    docker logs arangodb-instance
+    .. code-block:: bash
+
+        docker logs arangodb-instance
 
 5. Access and sign in:
 
@@ -54,7 +62,9 @@ If you would like to view our deployed Knowledge Graph instance:
 - Sign in with:
 
   - **Username**: ``root``
-  - **Password**: Run the following command in the DAMS server to retrieve it from the container logs::
+  - **Password**: Run the following command in the DAMS server to retrieve it from the container logs:
+
+    .. code-block:: bash
 
       docker logs arangodb-instance
 
