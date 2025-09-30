@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "dotenv>=0.9.9",
+    "playwright>=1.55.0",
     "python-arango>=8.2.2",
     "tqdm>=4.67.1",
 ]
