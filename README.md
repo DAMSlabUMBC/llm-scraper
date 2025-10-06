@@ -14,3 +14,26 @@
 
 ## Database
 <img src="assets/database_workflow.png"/>
+
+## Execute the code 💻
+
+### Scrape a Website
+```sh
+  uv run -m src.scraper.scrape
+```
+
+### Scrape E-commerce
+```sh
+  uv run -m src.scraper.scrape_to_disk --<config_name>
+```
+
+Example for scraping Amazon:
+```sh
+  uv run -m src.scraper.scrape_to_disk --amazon
+```
+This command works by passing command-line arguments (e.g., --amazon) as keys into a dictionary of config files
+
+### Scrape Private Policy
+```sh
+  In progress 🚧
+```
