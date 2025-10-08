@@ -18,8 +18,6 @@ from arango import ArangoClient
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
 
-# ---------------------- Setup ----------------------
-
 load_dotenv()
 
 client = ArangoClient(hosts=os.getenv("HOST_URL"))
@@ -32,57 +30,14 @@ graph = db.graph("IoT_KG")
 
 Triplet = Tuple[Tuple[str, str], str, Tuple[str, str]]  # ((type, value), predicate, (type, value))
 
-# ---------------------- Playwright helpers ----------------------
-
-CONSENT_BUTTON_SELECTORS = [
-    "button:has-text('I agree')",
-    "button:has-text('Accept all')",
-    "button:has-text('Accept')",
-    "text=I agree",
-    "text=Accept all",
-]
-
-RESULT_STATS_SELECTORS = [
-    "#result-stats",                        # classic
-    "div[role='navigation'] ~ div:has-text('results')",  # fallback heuristic
-]
-
 RESULT_REGEX = re.compile(r"([0-9][0-9,\.]+)\s+results", flags=re.I)
-
-
-def _maybe_click_consent(page) -> None:
-    for sel in CONSENT_BUTTON_SELECTORS:
-        try:
-            if page.locator(sel).first.is_visible():
-                page.locator(sel).first.click(timeout=1500)
-                page.wait_for_load_state("domcontentloaded", timeout=5000)
-                return
-        except Exception:
-            continue
-
-
-def _extract_results_text(page) -> str:
-    # Try multiple selectors
-    for sel in RESULT_STATS_SELECTORS:
-        try:
-            return page.locator(sel).first.inner_text(timeout=2500)
-        except Exception:
-            continue
-    # Fallback: scan any element with the word "results"
-    try:
-        return page.locator("text=/\\bresults\\b/i").first.inner_text(timeout=2000)
-    except Exception:
-        return ""
-
-
-# ---------------------- Search ----------------------
 
 def get_total_search_results_sync(queries: List[str], headless: bool = False) -> List[int]:
     """
     For each query string, fetch the Google results count and return a list[int].
     Guaranteed to return one integer per input query; 0 on any failure.
     """
-    # Defensive: if something nested sneaks in, flatten strings only
+
     flat_queries: List[str] = []
     for q in queries:
         if isinstance(q, str):
@@ -93,7 +48,6 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
     if not flat_queries:
         return [0] * len(queries)
 
-    # Use Stealth to reduce bot-detection flakiness
     with Stealth().use_sync(sync_playwright()) as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
@@ -105,17 +59,17 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
                     url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
                     page.goto(url, wait_until="domcontentloaded", timeout=15000)
 
-                    # Handle consent if it appears
-                    _maybe_click_consent(page)
+                    text = page.locator('#result-stats').inner_text(timeout=2500)
 
-                    text = _extract_results_text(page)
                     if not text:
                         results.append(0)
+                        print("Could not find results tag")
                         continue
 
                     m = RESULT_REGEX.search(text)
                     if not m:
                         results.append(0)
+                        print("Results tag did not match regex")
                         continue
 
                     num_txt = m.group(1).replace(",", "")
@@ -124,7 +78,6 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
                     except ValueError:
                         results.append(0)
 
-                    # tiny pause can help avoid rate limiting
                     page.wait_for_timeout(250)
                 except Exception:
                     results.append(0)
@@ -135,20 +88,19 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
             except Exception:
                 pass
 
-
-# ---------------------- Public API ----------------------
-
 def search_validation_method(triple: Triplet) -> int:
     """
     Returns 1 if the best (max) result count among the true triple variants
     beats the best among the corrupted variants, else 0.
     """
-    query_variants = format_triplet(triple)                     # List[str]
-    opposing_nested = format_opposing_triplet(triple)           # List[List[str]]
+    query_variants = format_triplet(triple)
+    opposing_nested = format_opposing_triplet(triple)
     opposing_flat = [q for group in opposing_nested for q in group]
 
     print("QUERIES:", query_variants)
     print("OPPOSING:", opposing_nested)
+
+    # TODO: Is it better to call get total search results once to reduce browser opening?
 
     normal_counts = get_total_search_results_sync(query_variants, headless=False)
     print("Normal Counts: ", normal_counts)
@@ -156,14 +108,13 @@ def search_validation_method(triple: Triplet) -> int:
     print("Opposing Counts: ", opposing_counts)
 
 
+    # TODO: Needs revision
     normal_best = max(normal_counts) if normal_counts else 0
     opposing_best = max(opposing_counts) if opposing_counts else 0
 
     return 1 if normal_best > opposing_best else 0
 
-
-# ---------------------- Triplet formatters ----------------------
-
+# TODO: Needs revision
 def format_triplet(triplet: Triplet) -> List[str]:
     """
     Converts a structured triplet into multiple natural-language query variants.
@@ -239,7 +190,7 @@ def format_triplet(triplet: Triplet) -> List[str]:
 
     return v
 
-
+# TODO: Needs revision
 def format_opposing_triplet(triplet: Triplet) -> List[List[str]]:
     """
     Corrupt one side of the triple (subject or object) using the top-n
@@ -289,9 +240,6 @@ def format_opposing_triplet(triplet: Triplet) -> List[List[str]]:
     print(tops)
     print("✅ FINAL: ", result)
     return result
-
-
-# ---------------------- Graph query ----------------------
 
 def top_by_edge(edge_col: str, vertex_col: str, direction: str = "INBOUND", limit: int = 3):
     print("RUNNING TOP_BY_EDGE")
