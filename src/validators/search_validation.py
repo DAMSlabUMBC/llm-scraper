@@ -38,26 +38,18 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
     Guaranteed to return one integer per input query; 0 on any failure.
     """
 
-    flat_queries: List[str] = []
-    for q in queries:
-        if isinstance(q, str):
-            flat_queries.append(q)
-        elif isinstance(q, (list, tuple)):
-            flat_queries.extend([x for x in q if isinstance(x, str)])
-
-    if not flat_queries:
-        return [0] * len(queries)
-
     with Stealth().use_sync(sync_playwright()) as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
         results: List[int] = []
 
         try:
-            for query in flat_queries:
+            for query in queries:
                 try:
                     url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
-                    page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                    page.goto(url, wait_until="domcontentloaded")
+
+                    page.wait_for_timeout(10000)
 
                     text = page.locator('#result-stats').inner_text(timeout=2500)
 
