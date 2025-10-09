@@ -80,6 +80,15 @@ def get_total_search_results_sync(queries: List[str], headless: bool = False) ->
             except Exception:
                 pass
 
+"""
+Two problems with why the just searching for the original triple is an issue
+1. Language
+2. Not often searched
+
+To eliminate the issue with language, we search variances of the triple
+To eliminate not often searched, 
+
+"""
 def search_validation_method(triple: Triplet) -> int:
     """
     Returns 1 if the best (max) result count among the true triple variants
@@ -95,6 +104,10 @@ def search_validation_method(triple: Triplet) -> int:
     # TODO: Is it better to call get total search results once to reduce browser opening?
 
     normal_counts = get_total_search_results_sync(query_variants, headless=False)
+
+    # TODO: Determine if the results of the searches is a lot, if it is can heuristically assume 
+    # it's correct and not proceed with the corruption process
+    
     print("Normal Counts: ", normal_counts)
     opposing_counts = get_total_search_results_sync(opposing_flat, headless=False)
     print("Opposing Counts: ", opposing_counts)
@@ -111,6 +124,9 @@ def format_triplet(triplet: Triplet) -> List[str]:
     """
     Converts a structured triplet into multiple natural-language query variants.
     """
+    # https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+    # https://pypi.org/project/dependency-paraphraser/#description
+
     print("RUNNING FORMAT_TRIPLET")
     (subject_type, subject_value), predicate, (object_type, object_value) = triplet
     v: List[str] = []
