@@ -38,7 +38,7 @@ async def scrape_to_disk(urls: list[str], config: str):
             browser = None
             try:
                 browser = await p.firefox.launch(headless=False)
-                output_dir = f"src/triplets/{config}"
+                output_dir = f"src/data/html_dumps/{config}"
                 os.makedirs(output_dir, exist_ok=True)
 
                 for url in urls:
